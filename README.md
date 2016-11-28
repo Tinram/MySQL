@@ -4,11 +4,15 @@
 ### MySQL utility scripts
 
 
-## mysql_vars.sh
+## *mysql_vars.sh*
 
 ### Purpose
 
 Display important mysqld variables.
+
+Uses Bash for server portability.
+
+(Even Perl, as an alternative, would sometimes require a dependency to be installed on some servers.)
 
 ### Set-up
 
@@ -18,7 +22,15 @@ Display important mysqld variables.
 
 `./mysql_vars.sh`
 
-prompts for host, username, and password of the mysql server.
+prompts for host, username, and password (not echoed) of the mysql server.
+
+#### Usage on Windows
+
+On Windows, via a PuTTY connection, the script output may exceed PuTTY's scrollback limit. I chose an interactive connection input for my usage on Linux-to-Linux (avoiding switches); however, this does mean stdout redirection is blocked.
+
+Short of rewriting the command-line parsing, a PuTTY workaround is:
+
+`./mysql_vars.sh | tee myvars.txt`
 
 
 ## License
