@@ -40,12 +40,11 @@ Short of rewriting the command-line parsing, a PuTTY workaround is:
 
 ### Purpose
 
-PHP 7 CLI script to split a large MySQL schema file by table definitions into separate files.
+PHP 7 CLI script to split a large MySQL schema file dump by table definitions into separate files.
 
 ### Usage
 
     php -f schema_splitter.php <filename>
-
 
 ## License
 

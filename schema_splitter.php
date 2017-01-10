@@ -48,7 +48,7 @@ class SchemaSplitter {
 		*
 		* @author          Martin Latter <copysense.co.uk>
 		* @copyright       Martin Latter 05/01/2017
-		* @version         0.24
+		* @version         0.25
 		* @license         GNU GPL v3.0
 		* @link            https://github.com/Tinram/MySQL.git
 	*/
@@ -56,7 +56,7 @@ class SchemaSplitter {
 
 	private
 
-		# CONFIGURATION
+		# CONFIGURATION #########################
 
 		# start table marker
 		$sStartTableMarker = 'DROP TABLE',
@@ -73,7 +73,7 @@ class SchemaSplitter {
 		# subdirectory for output files
 		$sOutputDirPrefix = 'schema_files',
 
-		#######################################
+		#########################################
 
 		$sOutputDir = '',
 
@@ -264,7 +264,7 @@ class SchemaSplitter {
 		* @return   string
 	*/
 
-	public function displayMessages() {
+	public function displayMessages(): string {
 
 		return join(PHP_EOL, $this->aMessages);
 	}
