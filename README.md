@@ -3,11 +3,16 @@
 
 #### MySQL utility scripts
 
+
 + mysqlvars.sh
 + schema_splitter.php
 
 
+---
+
+
 ## *mysql_vars.sh*
+
 
 ### Purpose
 
@@ -15,11 +20,13 @@ Display important mysqld variables.
 
 Uses Bash for server portability.
 
-(Even Perl, as an alternative, would sometimes require a dependency to be installed on some servers.)
+(Even Perl, as an alternative, will sometimes require a dependency to be installed on some servers.)
+
 
 ### Set-up
 
     chmod 744 mysql_vars.sh
+
 
 ### Usage
 
@@ -27,24 +34,32 @@ Uses Bash for server portability.
 
 prompts for host, username, and password (not echoed) of the mysql server.
 
+
 #### Usage on Windows
 
-On Windows, via a PuTTY connection, the script output may exceed PuTTY's scrollback limit. I chose an interactive connection input for my usage on Linux-to-Linux (avoiding switches); however, this does mean stdout redirection is blocked.
+On Windows, via a PuTTY connection, the script output may exceed PuTTY's scrollback limit. I chose an interactive connection input for my usage on Linux-to-Linux (avoiding switches). However, this does mean stdout redirection is blocked.
 
-Short of rewriting the command-line parsing, a PuTTY workaround is:
+Short of rewriting the command-line parsing, a workaround is:
 
     ./mysql_vars.sh | tee myvars.txt
 
 
-## schema_splitter.php
+## *schema_splitter.php*
+
 
 ### Purpose
 
-PHP 7 CLI script to split a large MySQL schema file dump by table definitions into separate files.
+PHP 7 CLI script to split a large MySQL schema file dump by table definitions into separate .sql files.
+
 
 ### Usage
 
     php -f schema_splitter.php <filename>
+
+or if made executable:
+
+    ./schema_splitter.php <filename>
+
 
 ## License
 
