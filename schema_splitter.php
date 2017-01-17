@@ -12,12 +12,14 @@
 
 declare(strict_types = 1); # reduces execution time by ~1 sec
 
+define('DUB_EOL', PHP_EOL . PHP_EOL);
+
 
 if (@ ! $_SERVER['argv'][1]) {
 
 	$sUsage =
-			PHP_EOL . ' ' . basename($_SERVER['argv'][0]) .
-			PHP_EOL . PHP_EOL . "\tusage: php -f " . basename($_SERVER['argv'][0]) . ' <filename>' . PHP_EOL . PHP_EOL;
+			PHP_EOL . ' ' . basename(__FILE__, '.php') .
+			DUB_EOL . "\tusage: php -f " . basename(__FILE__) . ' <filename>' . DUB_EOL;
 
 	die($sUsage);
 }
@@ -25,7 +27,7 @@ if (@ ! $_SERVER['argv'][1]) {
 $sFile = $_SERVER['argv'][1];
 
 if ( ! file_exists($sFile)) {
-	die(PHP_EOL . ' The file \'' . $sFile . '\' does not exist in this directory!' . PHP_EOL);
+	die(PHP_EOL . ' The file \'' . $sFile . '\' does not exist in this directory!' . DUB_EOL);
 }
 else {
 
@@ -48,7 +50,7 @@ class SchemaSplitter {
 		*
 		* @author          Martin Latter <copysense.co.uk>
 		* @copyright       Martin Latter 05/01/2017
-		* @version         0.25
+		* @version         0.26
 		* @license         GNU GPL v3.0
 		* @link            https://github.com/Tinram/MySQL.git
 	*/
@@ -106,7 +108,7 @@ class SchemaSplitter {
 			$bCreateDir = mkdir($this->sOutputDir, 0755);
 
 			if ( ! $bCreateDir) {
-				die(' Script could not create required file output directory.' . PHP_EOL);
+				die(PHP_EOL . ' Script could not create required file output directory.' . DUB_EOL);
 			}
 		}
 
@@ -136,12 +138,12 @@ class SchemaSplitter {
 
 		# check for start marker presence
 		if ( ! strpos($sFile, $this->sStartTableMarker)) {
-			die(' No specified start markers found in schema file!' . PHP_EOL);
+			die(PHP_EOL . ' No specified start markers found in schema file!' . DUB_EOL);
 		}
 
 		# check for end marker presence
 		if ( ! strpos($sFile, $this->sEndTableMarker)) {
-			die(' No specified end markers found in schema file!' . PHP_EOL);
+			die(' No specified end markers found in schema file!' . DUB_EOL);
 		}
 
 		# check that number of CREATE and DROP statements match in that type of mysql dump schema
@@ -156,7 +158,7 @@ class SchemaSplitter {
 
 			# check count
 			if (count($aDropMatch[0]) !== count($aCreateMatch[0])) {
-				die(' Number of DROP TABLE statements does not match number of CREATE TABLE statements in schema file.' . PHP_EOL);
+				die(PHP_EOL . ' Number of DROP TABLE statements does not match number of CREATE TABLE statements in schema file.' . DUB_EOL);
 			}
 			else {
 				$this->iNumOfSchemaTables = count($aCreateMatch[0]);
@@ -192,7 +194,9 @@ class SchemaSplitter {
 
 			# N.B. strpos() is much faster than stripos()  (1.5s vs 245s on 2MB schema file)
 
-			$sTable = substr($sFile, $iStart, (($iEnd + ((strlen($this->sEndTableMarker)) - $iStart))));
+			$sTable = PHP_EOL;
+
+			$sTable .= substr($sFile, $iStart, (($iEnd + ((strlen($this->sEndTableMarker)) - $iStart))));
 
 			$sTable .= PHP_EOL;
 
