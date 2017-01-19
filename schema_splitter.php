@@ -5,8 +5,11 @@
 	* PHP 7 CLI script to split a large MySQL schema file dump by individual tables into separate files.
 	*
 	* Usage:
+	*        First ensure the class variables $sStartTableMarker and $sEndTableMarker contain the correct table start and finish identifiers in the schema file, then:
+	*
 	*        php -f schema_splitter.php <filename>
-	*        ./schema_splitter.php <filename>
+	*
+	*        (or ./schema_splitter.php <filename>)
 */
 
 
@@ -50,7 +53,7 @@ class SchemaSplitter {
 		*
 		* @author          Martin Latter <copysense.co.uk>
 		* @copyright       Martin Latter 05/01/2017
-		* @version         0.26
+		* @version         0.27
 		* @license         GNU GPL v3.0
 		* @link            https://github.com/Tinram/MySQL.git
 	*/
@@ -60,10 +63,10 @@ class SchemaSplitter {
 
 		# CONFIGURATION #########################
 
-		# start table marker
+		# schema start table marker
 		$sStartTableMarker = 'DROP TABLE',
 
-		#end table marker
+		# schema end table marker
 		$sEndTableMarker = 'saved_cs_client */;',
 
 		# debug toggle
@@ -230,6 +233,9 @@ class SchemaSplitter {
 		preg_match('/CREATE TABLE `([a-zA-Z0-9\-_]+)`/', $sTable, $aRXResults);
 		$sTableName = $aRXResults[1];
 		$sTableFile = $sTableName . '.sql';
+
+		# remove autoincrement string
+		$sTable = preg_replace('/ AUTO_INCREMENT=[0-9]+/i', '', $sTable, 1);
 
 		$iFileWrite = file_put_contents($this->sOutputDir . DIRECTORY_SEPARATOR . $sTableFile, $sTable);
 
