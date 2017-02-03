@@ -4,8 +4,9 @@
 #### MySQL utility scripts
 
 
-+ mysqlvars.sh
-+ schema_splitter.php
++ mysql\_vars.sh
++ schema\_splitter.php
++ table\_bench/table\_bench.php
 
 
 ---
@@ -19,8 +20,6 @@
 Display important mysqld variables.
 
 Uses Bash for server portability.
-
-(Even Perl, as an alternative, will sometimes require a dependency to be installed on some servers.)
 
 
 ### Set-up
@@ -59,6 +58,33 @@ PHP 7 CLI script to split a large MySQL schema file dump by table definitions in
 or if made executable:
 
     ./schema_splitter.php <filename>
+
+
+## *table_bench.php*
+
+
+### Purpose
+
++ Time row inserts into a MySQL table through configuration toggles controlling connection API, transactions etc.
+
++ Provides a timing harness for altering mysqld variables.
+
+Timings are often highly variable, so require much averaging. Nevertheless, large time differences are noticeable for prepared statements and my.cnf variables adjusted for INSERTs.
+
+
+### Usage
+
+1. `cd table_bench`
+
+2. Set the database connection parameters in *setup.php*
+
+3. `php -f setup.php`
+
+4. Set the parameters in *table_bench/config.php*
+
+5. `php -f table_bench.php`
+
+The above PHP files can also be executed through a web server.
 
 
 ## License
