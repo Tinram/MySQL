@@ -43,6 +43,9 @@ Short of rewriting the command-line parsing, a workaround is:
     ./mysql_vars.sh | tee myvars.txt
 
 
+---
+
+
 ## *schema_splitter.php*
 
 
@@ -58,6 +61,9 @@ PHP 7 CLI script to split a large MySQL schema file dump by table definitions in
 or if made executable:
 
     ./schema_splitter.php <filename>
+
+
+---
 
 
 ## *table_bench.php*
@@ -85,6 +91,9 @@ Timings are often highly variable, so require much averaging. Nevertheless, larg
 5. `php -f table_bench.php`
 
 The above PHP files can also be executed through a web server.
+
+
+---
 
 
 ## License
