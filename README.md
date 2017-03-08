@@ -7,6 +7,7 @@
 + mysql\_vars.sh
 + schema\_splitter.php
 + table\_bench/table\_bench.php
++ table\_sizer.php
 
 
 ---
@@ -91,6 +92,28 @@ Timings are often highly variable, so require much averaging. Nevertheless, larg
 5. `php -f table_bench.php`
 
 The above PHP files can also be executed through a web server.
+
+
+---
+
+
+## *table_sizer.php*
+
+
+### Purpose
+
+PHP CLI script to query MySQL table size properties, and if timestamps are available, provide an estimation of data insertion rates.
+
+
+### Usage
+
+First, add the database connection and table parameters in the configuration section at the top of the script.
+
+    php -f table_sizer.php
+
+or if made executable:
+
+    ./table_sizer.php
 
 
 ---
