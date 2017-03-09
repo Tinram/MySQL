@@ -13,7 +13,7 @@ class TableBench implements Configuration {
 		*
 		* @author        Martin Latter <copysense.co.uk>
 		* @copyright     Martin Latter 04/01/2017
-		* @version       0.03
+		* @version       0.04
 		* @license       GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 		* @link          https://github.com/Tinram/MySQL.git
 	*/
@@ -21,12 +21,12 @@ class TableBench implements Configuration {
 
 	const
 
-		LINE_BREAK = ((PHP_SAPI === 'cli') ? "\n" : '<br>'); # amend line for PHP < 5.6
+		LINE_BREAK = ((PHP_SAPI === 'cli') ? "\n" : '<br>'); # amend dynamic constant for PHP < 5.6
 
 
 	private
 
-		$oConnection = FALSE,
+		$oConnection = NULL,
 		$bActiveConnection = FALSE,
 
 		/* database engine string holder to ensure lowercase */
@@ -177,8 +177,7 @@ class TableBench implements Configuration {
 		if ( ! self::PREPARED_STATEMENTS) {
 			$rResult = $this->oConnection->query($sInsert);
 		}
-		# parameterized query
-		else {
+		else { # parameterised query
 
 			if ($this->sDBEngine === 'mysqli') {
 
