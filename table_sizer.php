@@ -28,7 +28,7 @@ interface IConfiguration {
         DATE_COLUMN       =    '<col>',       # Unix timestamp column - to acquire the earliest and latest timestamps
         PRIMARY_KEY_ID    =    '<id>',        # need an ID in order to get start and end dates with SQL
 
-        OUTPUT_IN_GBYTES  =    FALSE;        # GB or MB reporting
+        OUTPUT_IN_GBYTES  =    FALSE;         # GB or MB reporting
 }
 
 ##############################################
@@ -44,7 +44,7 @@ final class TableDetails implements IConfiguration {
 		*
 		* @author        Martin Latter <copysense.co.uk>
 		* @copyright     Martin Latter 06/03/2017
-		* @version       0.06
+		* @version       0.07
 		* @license       GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 		* @link          https://github.com/Tinram/MySQL.git
 	*/
@@ -132,17 +132,20 @@ final class TableDetails implements IConfiguration {
 		$bFailure = FALSE;
 
 		$sQuery = '
-			SELECT GROUP_CONCAT(TABLE_NAME) AS tables
+			SELECT TABLE_NAME
 			FROM information_schema.TABLES
-			WHERE TABLE_SCHEMA = "' . self::DATABASE . '"';
+			WHERE
+				TABLE_SCHEMA = "' . self::DATABASE . '"
+			AND
+				TABLE_NAME = "' . self::TABLE . '"';
 
 		$rResult = $this->oConnection->query($sQuery);
 		$aResult = $rResult->fetch_row();
 		$rResult->close();
 
-		$sTables = $aResult[0];
+		$sTable = $aResult[0];
 
-		if (strpos($sTables, self::TABLE) === FALSE) {
+		if ($sTable !== self::TABLE) {
 
 			$this->aMessages[] = 'ABORTED: the table \'' . self::TABLE . '\' does not exist in the database \'' . self::DATABASE . '\'!';
 			$bFailure = TRUE;
@@ -186,10 +189,10 @@ final class TableDetails implements IConfiguration {
 		$aResult = $rResult->fetch_row();
 		$rResult->close();
 
-		$this->aMessages[] = 'database: ' . self::DATABASE;
-		$this->aMessages[] = 'table: ' . self::TABLE;
-		$this->aMessages[] = 'table size: ' . (self::OUTPUT_IN_GBYTES ? sprintf('%01.3f', ($this->iDatabaseSize / 1073741824)) . ' GB' : sprintf('%01.2f', $this->iDatabaseSize / 1048576) . ' MB') . ' (data, no indexes)';
-		$this->aMessages[] = 'total rows: ' . number_format($aResult[0]);
+		$this->aMessages[] = 'database:       ' . self::DATABASE;
+		$this->aMessages[] = 'table:          ' . self::TABLE;
+		$this->aMessages[] = 'table size:     ' . (self::OUTPUT_IN_GBYTES ? sprintf('%01.3f', ($this->iDatabaseSize / 1073741824)) . ' GB' : sprintf('%01.2f', $this->iDatabaseSize / 1048576) . ' MB') . ' (data, no indexes)';
+		$this->aMessages[] = 'total rows:     ' . number_format($aResult[0]);
 
 	} # end getTableSize()
 
@@ -285,7 +288,7 @@ final class TableDetails implements IConfiguration {
 			return;
 		}
 
-		$this->aMessages[] = 'day range: ' . $iNumOfDays;
+		$this->aMessages[] = 'day range:      ' . $iNumOfDays;
 
 		# calculate data accumulation per day
 		$fSizePerDay = $this->iDatabaseSize / $iNumOfDays;
