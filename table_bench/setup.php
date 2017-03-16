@@ -6,7 +6,7 @@
 	*
 	* @author        Martin Latter <copysense.co.uk>
 	* @copyright     29/06/2014
-	* @version       0.04
+	* @version       0.05
 	* @license       GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 	* @link          https://github.com/Tinram/MySQL.git
 */
@@ -89,7 +89,7 @@ else {
 	}
 
 	# create grants to app user
-	$sQuery = 'GRANT SELECT, INSERT, UPDATE, ALTER, LOCK TABLES ON ' . DATABASE . '.* TO ' . APP_USERNAME . '@localhost IDENTIFIED BY "' . APP_PASSWORD . '"';
+	$sQuery = 'GRANT SELECT, INSERT, UPDATE, ALTER, LOCK TABLES ON ' . DATABASE . '.* TO "' . APP_USERNAME . '"@"' . HOST . '" IDENTIFIED BY "' . APP_PASSWORD . '"';
 	$rResults = $oConnection->query($sQuery);
 
 	if ($rResults) {
