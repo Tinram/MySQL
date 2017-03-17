@@ -8,6 +8,7 @@
 + schema\_splitter.php
 + table\_bench/table\_bench.php
 + table\_sizer.php
++ innodb\_status.sh
 
 
 ---
@@ -114,6 +115,29 @@ First, add the database connection and table parameters in the configuration sec
 or if made executable:
 
     ./table_sizer.php
+
+
+---
+
+
+## *innodb_status.sh*
+
+
+### Purpose
+
+Display the InnoDB monitor output without hyphenated presentation lines.
+
+
+### Set-up
+
+    chmod 744 innodb_status.sh
+
+
+### Usage
+
+    ./innodb_status.sh
+
+prompts for the password (not echoed) of the mysql server.
 
 
 ---
