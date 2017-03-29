@@ -8,7 +8,7 @@
 + schema\_splitter.php
 + table\_bench/table\_bench.php
 + table\_sizer.php
-+ innodb\_status.sh
++ innodb\_status\_parser.py
 
 
 ---
@@ -120,24 +120,35 @@ or if made executable:
 ---
 
 
-## *innodb_status.sh*
+## *innodb_status_parser.py*
 
 
 ### Purpose
 
-Display the InnoDB monitor output without hyphenated presentation lines.
+Extract and highlight some of the important items of the InnoDB monitor output.
+
+
+### Requirements
+
+Python 2 or Python 3.
 
 
 ### Set-up
 
-    chmod 744 innodb_status.sh
+    chmod 744 innodb_status_parser.py
 
 
 ### Usage
 
-    ./innodb_status.sh
+    ./innodb_status_parser.py
+
+or
+
+    python innodb_status_parser.py
 
 prompts for the password (not echoed) of the mysql server.
+
+If `USE_FILE` in the top configuration section is set to `True`, the script will attempt to parse a previous file dump (`FILENAME` default is `example.txt`) of the InnoDB monitor output.
 
 
 ---
