@@ -36,7 +36,7 @@ class InnodbStatusParser:
 
         Author               Martin Latter <copysense.co.uk>
         Copyright            Martin Latter 22/03/17
-        Version              0.09
+        Version              0.10
         License              GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
         Link                 https://github.com/Tinram/MySQL.git
     """
@@ -157,11 +157,11 @@ class InnodbStatusParser:
 
             sem = re.findall(r'--Thread .+ seconds', currline)
             if sem:
-                self.semaphores.append(str(sem))
+                self.semaphores.append(' | ' . join(sem))
 
             fke = re.findall(r'LATEST FOREIGN KEY ERROR .+ there is a record:', currline)
             if fke:
-                self.fk_errors.append(str(fke))
+                self.fk_errors.append('' . join(fke))
 
             tlk = re.findall(r'LOCK WAIT .+ RECORD LOCKS', currline)
             if tlk:
@@ -193,7 +193,7 @@ class InnodbStatusParser:
         if self.rows:
 
             self.title('ROW DATA')
-            print('since server started/restarted:')
+            print('since server started/restarted:\n')
             print('rows inserted: ' + self.rows[0][0])
             print('rows updated: ' + self.rows[0][1])
             print('rows deleted: ' + self.rows[0][2])
@@ -229,7 +229,7 @@ class InnodbStatusParser:
         if self.semaphores:
 
             self.title('THREADS')
-            print('thread waiting:')
+            print('thread waits:\n')
             print(' ' . join(self.semaphores))
             self.sep()
 
