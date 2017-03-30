@@ -36,7 +36,7 @@ class InnodbStatusParser:
 
         Author               Martin Latter <copysense.co.uk>
         Copyright            Martin Latter 22/03/17
-        Version              0.08
+        Version              0.09
         License              GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
         Link                 https://github.com/Tinram/MySQL.git
     """
@@ -190,12 +190,12 @@ class InnodbStatusParser:
         print('data collected in: ' + ' ' . join(self.time_period) + ' seconds')
         self.sep()
 
-        if (self.rows):
+        if self.rows:
 
             self.title('ROW DATA')
             print('since server started/restarted:')
             print('rows inserted: ' + self.rows[0][0])
-            print('rows update: ' + self.rows[0][1])
+            print('rows updated: ' + self.rows[0][1])
             print('rows deleted: ' + self.rows[0][2])
             print('rows read: ' + self.rows[0][3])
             self.sep()
@@ -250,6 +250,7 @@ class InnodbStatusParser:
 
             self.title('FOREIGN KEY ERRORS')
             print(' ' . join(self.fk_errors))
+            self.sep()
 
     # end display_data()
 
