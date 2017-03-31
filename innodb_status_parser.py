@@ -36,7 +36,7 @@ class InnodbStatusParser:
 
         Author               Martin Latter <copysense.co.uk>
         Copyright            Martin Latter 22/03/17
-        Version              0.10
+        Version              0.11
         License              GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
         Link                 https://github.com/Tinram/MySQL.git
     """
@@ -89,11 +89,16 @@ class InnodbStatusParser:
             try:
 
                 with open(CONFIG['FILENAME'], 'r') as locfile:
+
                     filecontents = locfile.readlines()
 
-            except(StandardError):
+            except IOError as err:
 
-                print('FILE ISSUE: "' + CONFIG['FILENAME'] + '" could not be found in this directory!\n')
+                if err.errno == 2:
+                    print('FILE ISSUE: "' + CONFIG['FILENAME'] + '" could not be found in this directory!\n')
+                else:
+                    print(err)
+
                 sys.exit(1)
 
             else: # harmonise between file pipe and local file parsing for regex parsing
