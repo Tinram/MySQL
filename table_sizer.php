@@ -44,7 +44,7 @@ final class TableDetails implements IConfiguration {
 		*
 		* @author        Martin Latter <copysense.co.uk>
 		* @copyright     Martin Latter 06/03/2017
-		* @version       0.07
+		* @version       0.08
 		* @license       GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 		* @link          https://github.com/Tinram/MySQL.git
 	*/
@@ -96,9 +96,9 @@ final class TableDetails implements IConfiguration {
 
 	private function init() {
 
-		$TableNameFail = $this->checkTableName();
+		$bTableNameFail = $this->checkTableName();
 
-		if ($TableNameFail) {
+		if ($bTableNameFail) {
 			$this->outputMessages();
 			return;
 		}
