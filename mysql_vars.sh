@@ -6,13 +6,13 @@
 
 # author      Martin Latter <copysense.co.uk>
 # copyright   Martin Latter 24/11/2016
-# version     0.13
+# version     0.14
 # license     GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 # link        https://github.com/Tinram/MySQL.git
 
 
-version="v.0.13"
-date="20161128"
+version="v.0.14"
+date="20170620"
 mysqlPort="3306" # for remote host not listening on 3306; for 'localhost' MySQL connects with sockets (override: 127.0.0.1)
 scriptName=$0
 
@@ -87,21 +87,28 @@ main() {
 
 	echo -e "\n\n~~ INNODB KEY VARS ~~\n"
 	mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
+
+		SHOW VARIABLES WHERE variable_name = 'innodb_strict_mode';
+		SHOW VARIABLES WHERE variable_name = 'innodb_file_format';
+		SHOW VARIABLES WHERE variable_name = 'innodb_file_per_table';
 		SHOW VARIABLES WHERE variable_name = 'innodb_buffer_pool_size';
+		SHOW VARIABLES WHERE variable_name = 'innodb_buffer_pool_instances';
+		SHOW VARIABLES WHERE variable_name = 'innodb_change_buffer_max_size';
+		SHOW VARIABLES WHERE variable_name = 'innodb_commit_concurrency';
+		SHOW VARIABLES WHERE variable_name = 'innodb_io_capacity';
+		SHOW VARIABLES WHERE variable_name = 'innodb_thread_concurrency';
+		SHOW VARIABLES WHERE variable_name = 'innodb_old_blocks_time';
 		SHOW VARIABLES WHERE variable_name = 'innodb_log_buffer_size';
+		SHOW VARIABLES WHERE variable_name = 'innodb_log_file_size';
 		SHOW VARIABLES WHERE variable_name = 'innodb_flush_log_at_trx_commit';
-		SHOW VARIABLES WHERE variable_name = 'innodb_log_file_size'";
+		SHOW VARIABLES WHERE variable_name = 'innodb_flush_method'";
 
 	echo -e "\n\n~~ INNODB STATS ~~\n"
 	mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
-		SHOW STATUS WHERE variable_name = 'innodb_buffer_pool_size';
 		SHOW STATUS WHERE variable_name LIKE 'innodb_buffer_%';
 		SHOW STATUS WHERE variable_name LIKE 'innodb_data_%';
 		SHOW STATUS WHERE variable_name LIKE 'innodb_log_%';
-		SHOW STATUS WHERE variable_name LIKE 'innodb_row%';
-		SHOW VARIABLES WHERE variable_name = 'innodb_file_io_threads';
-		SHOW VARIABLES WHERE variable_name = 'innodb_io_capacity';
-		SHOW VARIABLES WHERE variable_name = 'innodb_strict_mode'";
+		SHOW STATUS WHERE variable_name LIKE 'innodb_row%'";
 
 		#echo -e "\n\n~~ INNODB STATUS ~~\n"
 		#mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
