@@ -135,18 +135,19 @@ Python 2 or Python 3.
 
 ### Set-up
 
-    chmod 744 innodb_status_parser.py
+Check CONFIG section parameters, and edit if required.
 
 
 ### Usage
 
-    ./innodb_status_parser.py
+    python innodb_status_parser.py
 
 or
 
-    python innodb_status_parser.py
+    chmod 744 innodb_status_parser.py
+    ./innodb_status_parser.py
 
-prompts for the password (not echoed) of the mysql server.
+prompts for the password (not echoed) of the MySQL server.
 
 If `USE_FILE` in the top configuration section is set to `True`, the script will attempt to parse a previous file dump (`FILENAME` default is `example.txt`) of the InnoDB monitor output.
 
