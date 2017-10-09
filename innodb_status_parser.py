@@ -1,10 +1,14 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 # -*- coding: utf-8 -*-
 
 """
     InnoDB status output parser.
 """
 
+
+import sys
+import subprocess
+import re
 
 
 ## CONFIGURATION ##
@@ -19,24 +23,18 @@ CONFIG = {
 }
 
 
-
-import sys
-import subprocess
-import re
-
-
-class InnodbStatusParser:
+class InnodbStatusParser(object):
 
     """
         InnodbStatusParser
         Parse MySQL's 'INNODB SHOW ENGINE STATUS' output.
 
         Python Version       2.6 to 3.6
-        Python 3 Usage       Replace shebang with: #!/usr/bin/python3 or call script with python3 <script_name>
+        Python 3 Usage       Replace shebang with: #!/usr/bin/env python3 or call script with python3 innodb_status_parser.py
 
         Author               Martin Latter <copysense.co.uk>
         Copyright            Martin Latter 22/03/17
-        Version              0.11
+        Version              0.12
         License              GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
         Link                 https://github.com/Tinram/MySQL.git
     """
@@ -70,11 +68,10 @@ class InnodbStatusParser:
 
         if not CONFIG['USE_FILE']:
 
-            cmd = subprocess.Popen (
-
+            cmd = subprocess.Popen(
                 'mysql -e "SHOW ENGINE INNODB STATUS" -h ' + CONFIG['HOST'] + ' -u ' + CONFIG['USERNAME'] + ' -p',
-                shell = True,
-                stdout = subprocess.PIPE
+                shell=True,
+                stdout=subprocess.PIPE
             )
 
             self.output = cmd.stdout
@@ -128,7 +125,7 @@ class InnodbStatusParser:
             if tstmp:
                 self.timestamp = tstmp
 
-            tpd = re.findall('last (\d+) seconds', currline)
+            tpd = re.findall(r'last (\d+) seconds', currline)
             if tpd:
                 self.time_period = tpd
 
@@ -220,7 +217,7 @@ class InnodbStatusParser:
         if self.log_flush != self.log_sequence:
 
             self.title('UNFLUSHED DATA')
-            diff = ( int(self.log_sequence[0]) - int(self.log_flush[0]) ) / 1024
+            diff = (int(self.log_sequence[0]) - int(self.log_flush[0])) / 1024
             diff2 = '%.4f' % diff
             print('\n' + diff2 + ' kB data is unflushed to disk.')
             self.sep()
