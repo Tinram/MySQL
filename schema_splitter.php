@@ -5,9 +5,10 @@
 	* PHP 7 CLI script to split a large MySQL schema file dump by individual tables into separate files.
 	*
 	* Usage:
-	*        First ensure the class variables $sStartTableMarker and $sEndTableMarker contain the correct table start and finish identifiers in the schema file, then:
+	*        First ensure the class variables $sStartTableMarker and $sEndTableMarker contain
+	*        the correct table start and finish identifiers in the schema file, then:
 	*
-	*        php -f schema_splitter.php <filename>
+	*        php schema_splitter.php <filename>
 	*
 	*        (or ./schema_splitter.php <filename>)
 */
@@ -18,11 +19,11 @@ declare(strict_types = 1); # reduces execution time by ~1 sec
 define('DUB_EOL', PHP_EOL . PHP_EOL);
 
 
-if (@ ! $_SERVER['argv'][1]) {
+if ( ! isset($_SERVER['argv'][1])) {
 
 	$sUsage =
 			PHP_EOL . ' ' . basename(__FILE__, '.php') .
-			DUB_EOL . "\tusage: php -f " . basename(__FILE__) . ' <filename>' . DUB_EOL;
+			DUB_EOL . "\tusage: php " . basename(__FILE__) . ' <filename>' . DUB_EOL;
 
 	die($sUsage);
 }
@@ -53,7 +54,7 @@ class SchemaSplitter {
 		*
 		* @author          Martin Latter <copysense.co.uk>
 		* @copyright       Martin Latter 05/01/2017
-		* @version         0.27
+		* @version         0.28
 		* @license         GNU GPL v3.0
 		* @link            https://github.com/Tinram/MySQL.git
 	*/
