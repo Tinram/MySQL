@@ -6,7 +6,7 @@
 	* Usage:
 	*        First ensure the database connection details and table column properties in the configuration section, then:
 	*
-	*        php -f table_sizer.php
+	*        php table_sizer.php
 	*
 */
 
@@ -44,7 +44,7 @@ final class TableDetails implements IConfiguration {
 		*
 		* @author        Martin Latter <copysense.co.uk>
 		* @copyright     Martin Latter 06/03/2017
-		* @version       0.08
+		* @version       0.09
 		* @license       GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 		* @link          https://github.com/Tinram/MySQL.git
 	*/
@@ -75,7 +75,7 @@ final class TableDetails implements IConfiguration {
 			}
 		}
 		catch (RuntimeException $e) {
-			echo $e;
+			echo $e->getMessage();
 		}
 
 	} # end __contruct()
