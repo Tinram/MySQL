@@ -1,4 +1,4 @@
-#!/usr/bin/php
+#!/usr/bin/env php
 <?php
 
 /**
@@ -22,7 +22,7 @@ define('DUB_EOL', PHP_EOL . PHP_EOL);
 if ( ! isset($_SERVER['argv'][1])) {
 
 	$sUsage =
-			PHP_EOL . ' ' . basename(__FILE__, '.php') .
+			PHP_EOL . ' ' . str_replace('_', ' ', ucwords(basename(__FILE__, '.php'), '_')) .
 			DUB_EOL . "\tusage: php " . basename(__FILE__) . ' <filename>' . DUB_EOL;
 
 	die($sUsage);
@@ -36,7 +36,6 @@ if ( ! file_exists($sFile)) {
 else {
 
 	$oSchemas = new SchemaSplitter($sFile);
-
 	echo $oSchemas->displayMessages();
 }
 
@@ -45,7 +44,7 @@ else {
 
 
 
-class SchemaSplitter {
+final class SchemaSplitter {
 
 	/**
 		* Split a large MySQL schema file dump by individual tables into separate files.
@@ -54,7 +53,7 @@ class SchemaSplitter {
 		*
 		* @author          Martin Latter <copysense.co.uk>
 		* @copyright       Martin Latter 05/01/2017
-		* @version         0.28
+		* @version         0.29
 		* @license         GNU GPL v3.0
 		* @link            https://github.com/Tinram/MySQL.git
 	*/
@@ -73,7 +72,7 @@ class SchemaSplitter {
 		# debug toggle
 		$bDebug = FALSE,
 
-		# check number of create and drop statements align in schema
+		# check that number of CREATE and DROP statements align in the schema
 		$bMatchCreateDropStatements = FALSE,
 
 		# subdirectory for output files
@@ -112,7 +111,7 @@ class SchemaSplitter {
 			$bCreateDir = mkdir($this->sOutputDir, 0755);
 
 			if ( ! $bCreateDir) {
-				die(PHP_EOL . ' Script could not create required file output directory.' . DUB_EOL);
+				die(PHP_EOL . ' Script could not create the required file output directory.' . DUB_EOL);
 			}
 		}
 
