@@ -1,4 +1,4 @@
-#!/usr/bin/php
+#!/usr/bin/env php
 <?php
 
 /**
@@ -9,7 +9,9 @@ require('config.php');
 require('tablebench.class.php');
 
 
-if (PHP_SAPI !== 'cli') {header('Content-Type: text/html; charset=utf-8');}
+if (PHP_SAPI !== 'cli') {
+	header('Content-Type: text/html; charset=utf-8');
+}
 
 $oTF = new TableBench();
 echo $oTF->getResults();
