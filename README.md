@@ -4,16 +4,17 @@
 #### MySQL utility scripts
 
 
-+ mysql\_vars.sh
-+ schema\_splitter.php
-+ table\_bench/table\_bench.php
-+ table\_sizer.php
-+ innodb\_status\_parser.py
++ [mysql\_vars.sh](#mysqlvars)
++ [schema\_splitter.php](#schemasplitter)
++ [table\_bench/table\_bench.php](#tablebench)
++ [table\_sizer.php](#tablesizer)
++ [innodb\_status\_parser.py](#innodbstatusparser)
 
 
 ---
 
 
+<a id="mysqlvars"></a>
 ## *mysql_vars.sh*
 
 
@@ -48,6 +49,7 @@ Short of rewriting the command-line parsing, a workaround is:
 ---
 
 
+<a id="schemasplitter"></a>
 ## *schema_splitter.php*
 
 
@@ -58,7 +60,7 @@ PHP 7 CLI script to split a large MySQL schema file dump by table definitions in
 
 ### Usage
 
-    php -f schema_splitter.php <filename>
+    php schema_splitter.php <filename>
 
 or if made executable:
 
@@ -68,6 +70,7 @@ or if made executable:
 ---
 
 
+<a id="tablebench"></a>
 ## *table_bench.php*
 
 
@@ -86,11 +89,11 @@ Timings are often highly variable, so require much averaging. Nevertheless, larg
 
 2. Set the database connection parameters in *setup.php*
 
-3. `php -f setup.php`
+3. `php setup.php`
 
 4. Set the parameters in *table_bench/config.php*
 
-5. `php -f table_bench.php`
+5. `php table_bench.php`
 
 The above PHP files can also be executed through a web server.
 
@@ -98,6 +101,7 @@ The above PHP files can also be executed through a web server.
 ---
 
 
+<a id="tablesizer"></a>
 ## *table_sizer.php*
 
 
@@ -110,7 +114,7 @@ PHP CLI script to query MySQL table size properties, and if timestamps are avail
 
 First, add the database connection and table parameters in the configuration section at the top of the script.
 
-    php -f table_sizer.php
+    php table_sizer.php
 
 or if made executable:
 
@@ -120,6 +124,7 @@ or if made executable:
 ---
 
 
+<a id="innodbstatusparser"></a>
 ## *innodb_status_parser.py*
 
 
