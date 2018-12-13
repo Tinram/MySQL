@@ -27,12 +27,16 @@ Uses Bash for server portability.
 
 ### Set-up
 
+```bash
     chmod 744 mysql_vars.sh
+```
 
 
 ### Usage
 
+```bash
     ./mysql_vars.sh
+```
 
 prompts for host, username, and password (not echoed) of the mysql server.
 
@@ -43,7 +47,9 @@ On Windows, via a PuTTY connection, the script output may exceed PuTTY's scrollb
 
 Short of rewriting the command-line parsing, a workaround is:
 
+```bash
     ./mysql_vars.sh | tee myvars.txt
+```
 
 
 ---
@@ -60,11 +66,15 @@ PHP 7 CLI script to split a large MySQL schema file dump by table definitions in
 
 ### Usage
 
+```bash
     php schema_splitter.php <filename>
+```
 
 or if made executable:
 
+```bash
     ./schema_splitter.php <filename>
+```
 
 
 ---
@@ -114,11 +124,15 @@ PHP CLI script to query MySQL table size properties, and if timestamps are avail
 
 First, add the database connection and table parameters in the configuration section at the top of the script.
 
+```bash
     php table_sizer.php
+```
 
 or if made executable:
 
+```bash
     ./table_sizer.php
+```
 
 
 ---
@@ -145,12 +159,17 @@ Check CONFIG section parameters, and edit if required.
 
 ### Usage
 
+```bash
     python innodb_status_parser.py
+```
 
 or
 
+
+```bash
     chmod 744 innodb_status_parser.py
     ./innodb_status_parser.py
+```
 
 prompts for the password (not echoed) of the MySQL server.
 
