@@ -42,7 +42,7 @@ final class TableDetails implements IConfiguration {
 		*
 		* Coded to PHP 5.5+
 		*
-		* @author        Martin Latter <copysense.co.uk>
+		* @author        Martin Latter
 		* @copyright     Martin Latter 06/03/2017
 		* @version       0.09
 		* @license       GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
@@ -69,7 +69,7 @@ final class TableDetails implements IConfiguration {
 				$this->bActiveConnection = TRUE;
 				$this->init();
 			}
-			else { # unsuccessful DB connection
+			else {
 
 				throw new RuntimeException('Database connection failed: ' . $this->oConnection->connect_error . ' (error number: ' . $this->oConnection->connect_errno . ')');
 			}

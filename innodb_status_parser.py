@@ -32,8 +32,8 @@ class InnodbStatusParser(object):
         Python Version       2.6 to 3.6
         Python 3 Usage       Replace shebang with: #!/usr/bin/env python3 or call script with python3 innodb_status_parser.py
 
-        Author               Martin Latter <copysense.co.uk>
-        Copyright            Martin Latter 22/03/17
+        Author               Martin Latter
+        Copyright            Martin Latter 22/03/2017
         Version              0.12
         License              GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
         Link                 https://github.com/Tinram/MySQL.git

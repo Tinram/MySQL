@@ -1,10 +1,11 @@
 #!/bin/bash
 
 # innodb_status.sh
-# display a shorter/tidier InnoDB monitor output
-# beware the variable time average 'Per second averages calculated from the last XX seconds' under the first heading
+#
+# Display a shorter/tidier InnoDB monitor output.
+# Beware the variable time average 'Per second averages calculated from the last XX seconds' under the first heading.
 
-# author      Martin Latter <copysense.co.uk>
+# author      Martin Latter
 # version     0.01
 # link        https://github.com/Tinram/MySQL.git
 

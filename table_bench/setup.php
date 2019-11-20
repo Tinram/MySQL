@@ -4,7 +4,7 @@
 	* Very simple install script to set-up the database for TableBench.
 	* Define your values in the configuration section below, then execute on the command-line (php -f setup.php) or through your web server.
 	*
-	* @author        Martin Latter <copysense.co.uk>
+	* @author        Martin Latter
 	* @copyright     29/06/2014
 	* @version       0.05
 	* @license       GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html

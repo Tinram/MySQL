@@ -11,7 +11,7 @@ class TableBench implements Configuration {
 		*                $oTF = new TableBench();
 		*                echo $oTF->getResults();
 		*
-		* @author        Martin Latter <copysense.co.uk>
+		* @author        Martin Latter
 		* @copyright     Martin Latter 04/01/2017
 		* @version       0.04
 		* @license       GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html

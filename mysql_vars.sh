@@ -1,10 +1,11 @@
 #!/bin/bash
 
 # mysql_vars.sh
-# display important mysqld variables
-# use an SSH tunnel when connecting to a remote host
+#
+# Display important mysqld variables.
+# Use an SSH tunnel when connecting to a remote host.
 
-# author      Martin Latter <copysense.co.uk>
+# author      Martin Latter
 # copyright   Martin Latter 24/11/2016
 # version     0.14
 # license     GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html

@@ -51,7 +51,7 @@ final class SchemaSplitter {
 		*
 		* Coded for PHP 7.0+
 		*
-		* @author          Martin Latter <copysense.co.uk>
+		* @author          Martin Latter
 		* @copyright       Martin Latter 05/01/2017
 		* @version         0.29
 		* @license         GNU GPL v3.0
