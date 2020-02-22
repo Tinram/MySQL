@@ -61,7 +61,7 @@ Short of rewriting the command-line parsing, a workaround is:
 
 ### Purpose
 
-PHP 7 CLI script to split a large MySQL schema file dump by table definitions into separate .sql files.
+PHP CLI script to split a large MySQL schema file dump by table definitions into separate .sql files.
 
 
 ### Usage
@@ -70,10 +70,10 @@ PHP 7 CLI script to split a large MySQL schema file dump by table definitions in
     php schema_splitter.php <filename>
 ```
 
-or if made executable:
+example:
 
 ```bash
-    ./schema_splitter.php <filename>
+    php schema_splitter.php schema_example/dbfilltest.sql
 ```
 
 
