@@ -7,13 +7,13 @@
 
 # author      Martin Latter
 # copyright   Martin Latter 24/11/2016
-# version     0.16
+# version     0.17
 # license     GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 # link        https://github.com/Tinram/MySQL.git
 
 
-version="v.0.15"
-date="20200329"
+version="v.0.17"
+date="20200811"
 mysqlPort="3306" # for remote host not listening on 3306; for 'localhost' MySQL connects with sockets (override: 127.0.0.1)
 scriptName=$0
 
@@ -77,8 +77,14 @@ main()
 
 	echo -e "\n\n~~ OPEN TABLES ~~\n"
 	mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
-		SHOW STATUS LIKE 'Open%tables';
+		SHOW GLOBAL STATUS LIKE 'Open%tables';
 		SHOW VARIABLES WHERE variable_name = 'table_open_cache'";
+
+	echo -e "\n\n~~ TEMPORARY TABLES ~~\n"
+	mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
+		SHOW VARIABLES WHERE variable_name LIKE '%_table_size';
+		SHOW GLOBAL STATUS WHERE variable_name = 'Created_tmp_tables';
+		SHOW GLOBAL STATUS WHERE variable_name = 'Created_tmp_disk_tables'";
 
 	echo -e "\n\n~~ MYISAM KEY VARS ~~\n"
 	mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
