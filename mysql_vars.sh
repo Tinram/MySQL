@@ -7,7 +7,7 @@
 
 # author      Martin Latter
 # copyright   Martin Latter 24/11/2016
-# version     0.15
+# version     0.16
 # license     GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 # link        https://github.com/Tinram/MySQL.git
 
@@ -51,10 +51,15 @@ main()
 	mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
 		STATUS";
 
-	echo -e "\n~~ CHARSET ~~\n"
+	echo -e "\n~~ GLOBAL CHARSET ~~\n"
 	mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
-		SHOW VARIABLES LIKE 'character_set_%';
-		SHOW VARIABLES LIKE 'collation%'";
+		SHOW GLOBAL VARIABLES LIKE 'character_set_%';
+		SHOW GLOBAL VARIABLES LIKE 'collation%'";
+
+	echo -e "\n~~ SESSION CHARSET ~~\n"
+	mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
+		SHOW SESSION VARIABLES LIKE 'character_set_%';
+		SHOW SESSION VARIABLES LIKE 'collation%'";
 
 	echo -e "\n\n~~ CONNECTIONS AND THREADS ~~\n"
 	mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
