@@ -5,6 +5,7 @@
 
 
 + [mysql\_vars.sh](#mysqlvars)
++ [mysql\_varmon.sh](#mysqlvarmon)
 + [schema\_splitter.php](#schemasplitter)
 + [table\_bench/table\_bench.php](#tablebench)
 + [table\_sizer.php](#tablesizer)
@@ -38,7 +39,7 @@ Uses Bash for server portability.
     ./mysql_vars.sh
 ```
 
-prompts for host, username, and password (not echoed) of the mysql server.
+&ndash; prompts for host, username, and password (not echoed) of the mysql server.
 
 
 #### Usage on Windows
@@ -50,6 +51,39 @@ Short of rewriting the command-line parsing, a workaround is:
 ```bash
     ./mysql_vars.sh | tee myvars.txt
 ```
+
+
+---
+
+
+<a id="mysqlvarmon"></a>
+## *mysql_varmon.sh*
+
+
+### Purpose
+
+Continously monitor mysqld variables.
+
+Uses Bash for server portability.
+
+
+### Set-up
+
+```bash
+    chmod 744 mysql_varmon.sh
+```
+
+
+### Usage
+
+```bash
+    ./mysql_varmon.sh
+```
+
+&ndash; prompts for host, username, and password (not echoed) of the mysql server.
+
+
+<kbd>Ctrl</kbd> + <kbd>C</kbd> to exit.
 
 
 ---
