@@ -7,13 +7,13 @@
 
 # author      Martin Latter
 # copyright   Martin Latter 24/11/2016
-# version     0.17
+# version     0.18
 # license     GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 # link        https://github.com/Tinram/MySQL.git
 
 
-version="v.0.17"
-date="20200811"
+version="v.0.18"
+date="20200819"
 mysqlPort="3306" # for remote host not listening on 3306; for 'localhost' MySQL connects with sockets (override: 127.0.0.1)
 scriptName=$0
 
@@ -32,7 +32,7 @@ main()
 		exit 1
 	fi
 
-	echo -e "\nmysqlvars $version\n"
+	echo -e "\nmysql_vars $version\n"
 
 	echo -n "host: (blank = localhost) "
 	read -r mysqlHost
@@ -61,15 +61,22 @@ main()
 		SHOW SESSION VARIABLES LIKE 'character_set_%';
 		SHOW SESSION VARIABLES LIKE 'collation%'";
 
-	echo -e "\n\n~~ CONNECTIONS AND THREADS ~~\n"
+	echo -e "\n\n~~ CONNECTIONS ~~\n"
 	mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
 		SHOW STATUS LIKE '%connect%';
 		SHOW VARIABLES WHERE variable_name = 'max_allowed_packet';
-		SHOW VARIABLES WHERE variable_name = 'thread_cache_size';
-		SHOW STATUS WHERE variable_name = 'threads_connected';
-		SHOW STATUS WHERE variable_name = 'threads_running';
 		SHOW VARIABLES WHERE variable_name = 'max_connections';
-		SHOW VARIABLES WHERE variable_name = 'wait_timeout'";
+		SHOW STATUS WHERE variable_name = 'Max_used_connections';
+		SHOW STATUS WHERE variable_name = 'Max_used_connections_time';
+		SHOW VARIABLES WHERE variable_name = 'max_connect_errors';
+		SHOW VARIABLES WHERE variable_name = 'wait_timeout';
+		SHOW VARIABLES WHERE variable_name = 'slow_launch_time';
+		SHOW STATUS WHERE variable_name ='Slow_launch_threads'";
+
+	echo -e "\n\n~~ THREADS ~~\n"
+	mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
+		SHOW VARIABLES WHERE variable_name = 'thread_cache_size';
+		SHOW STATUS WHERE variable_name LIKE 'Threads_%'";
 
 	echo -e "\n\n~~ TIMEOUTS ~~\n"
 	mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
@@ -105,13 +112,15 @@ main()
 		SHOW VARIABLES WHERE variable_name = 'innodb_buffer_pool_instances';
 		SHOW VARIABLES WHERE variable_name = 'innodb_change_buffer_max_size';
 		SHOW VARIABLES WHERE variable_name = 'innodb_commit_concurrency';
-		SHOW VARIABLES WHERE variable_name = 'innodb_io_capacity';
 		SHOW VARIABLES WHERE variable_name = 'innodb_thread_concurrency';
 		SHOW VARIABLES WHERE variable_name = 'innodb_old_blocks_time';
 		SHOW VARIABLES WHERE variable_name = 'innodb_log_buffer_size';
 		SHOW VARIABLES WHERE variable_name = 'innodb_log_file_size';
 		SHOW VARIABLES WHERE variable_name = 'innodb_flush_log_at_trx_commit';
-		SHOW VARIABLES WHERE variable_name = 'innodb_flush_method'";
+		SHOW VARIABLES WHERE variable_name = 'innodb_flush_method';
+		SHOW VARIABLES WHERE variable_name = 'innodb_io_capacity';
+		SHOW VARIABLES WHERE variable_name = 'innodb_read_io_threads';
+		SHOW VARIABLES WHERE variable_name = 'innodb_write_io_threads';";
 
 	echo -e "\n\n~~ INNODB STATS ~~\n"
 	mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
