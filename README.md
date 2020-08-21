@@ -1,7 +1,7 @@
 
 # MySQL
 
-#### MySQL utility scripts
+#### MySQL utility scripts.
 
 
 + [mysql\_vars.sh](#mysqlvars)
@@ -24,6 +24,8 @@
 Display important mysqld variables.
 
 Uses Bash for server portability.
+
+Use Meld / differ to compare servers.
 
 
 ### Set-up
