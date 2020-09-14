@@ -11,20 +11,22 @@
 #
 # author      Martin Latter
 # copyright   Martin Latter 19/08/2020
-# version     0.01
+# version     0.02
 # license     GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 # link        https://github.com/Tinram/MySQL.git
 
 
-version="v.0.01"
-date="20200819"
-mysqlPort="3306" # for remote host not listening on 3306; for 'localhost' MySQL connects with sockets (override: 127.0.0.1)
+refresh=1 # 1 second
+name="mysql_varmon"
+version="v.0.02"
+date="20200914"
+mysqlPort="3306"
 scriptName=$0
 
 
 showHelp()
 {
-	echo -e "\nmysql_varmon $version $date\nmonitor mysqld variables\n"
+	echo -e "\n$name $version $date\nmonitor mysqld variables\n"
 	echo -e "usage: $scriptName\n"
 }
 
@@ -36,7 +38,7 @@ main()
 		exit 1
 	fi
 
-	echo -e "\nmysql_varmon $version\n"
+	echo -e "\n$name $version\n"
 
 	echo -n "host: (blank = localhost) "
 	read -r mysqlHost
@@ -56,22 +58,22 @@ main()
 		clear
 
 		echo -e "\n\n~~ THREADS ~~\n"
-		mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
+		mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 			SHOW VARIABLES WHERE variable_name = 'thread_cache_size';
-			SHOW STATUS WHERE variable_name LIKE 'Threads_%'"
+			SHOW STATUS WHERE variable_name LIKE 'Threads_%'" 2>/dev/null
 
 		echo -e "\n\n~~ CONNECTIONS ~~\n"
-		mysql -u$mysqlUser -p$mysqlPass -h$mysqlHost -P$mysqlPort -e "
+		mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 			SHOW VARIABLES WHERE variable_name LIKE 'max_connect%';
 			SHOW STATUS WHERE variable_name = 'Max_used_connections';
 			SHOW STATUS WHERE variable_name = 'Aborted_connects';
 			SHOW STATUS WHERE variable_name = 'Locked_connects';
 			SHOW VARIABLES WHERE variable_name = 'slow_launch_time';
-			SHOW STATUS WHERE variable_name ='Slow_launch_threads'";
+			SHOW STATUS WHERE variable_name ='Slow_launch_threads'" 2>/dev/null
 
 		echo -e "\n"
 
-		sleep 1
+		sleep "$refresh"
 
 	done
 }
