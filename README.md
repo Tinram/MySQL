@@ -6,6 +6,7 @@
 
 + [mysql\_vars.sh](#mysqlvars)
 + [mysql\_varmon.sh](#mysqlvarmon)
++ [mysql\_grants.sh](#mysqlgrants)
 + [schema\_splitter.php](#schemasplitter)
 + [table\_bench/table\_bench.php](#tablebench)
 + [table\_sizer.php](#tablesizer)
@@ -86,6 +87,35 @@ Uses Bash for server portability.
 
 
 <kbd>Ctrl</kbd> + <kbd>C</kbd> to exit.
+
+
+---
+
+
+<a id="mysqlgrants"></a>
+## *mysql_grants.sh*
+
+
+### Purpose
+
+List GRANTs.
+
+Similar to, yet simpler than, *pt-show-grants*.  
+Connect as root user.
+
+
+### Set-up
+
+```bash
+    chmod 744 mysql_grants.sh
+```
+
+
+### Usage
+
+```bash
+    ./mysql_grants.sh
+```
 
 
 ---
