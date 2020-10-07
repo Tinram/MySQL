@@ -7,6 +7,7 @@
 + [mysql\_vars.sh](#mysqlvars)
 + [mysql\_varmon.sh](#mysqlvarmon)
 + [mysql\_grants.sh](#mysqlgrants)
++ [schema\_summary.php](#schemasummary)
 + [schema\_splitter.php](#schemasplitter)
 + [table\_bench/table\_bench.php](#tablebench)
 + [table\_sizer.php](#tablesizer)
@@ -121,13 +122,32 @@ Connect as root user.
 ---
 
 
+<a id="schemasummary"></a>
+## *schema_summary.php*
+
+
+### Purpose
+
+PHP CLI script to extract a brief summary of table names and foreign keys from large schema files.
+
+
+### Usage
+
+```bash
+    php schema_summary.php <filename> [keyword]
+```
+
+
+---
+
+
 <a id="schemasplitter"></a>
 ## *schema_splitter.php*
 
 
 ### Purpose
 
-PHP CLI script to split a large MySQL schema file dump by table definitions into separate .sql files.
+PHP CLI script to split a large MySQL schema file by table definitions into separate .sql files.
 
 
 ### Usage
