@@ -137,6 +137,12 @@ PHP CLI script to extract a brief summary of table names and foreign keys from l
     php schema_summary.php <filename> [keyword]
 ```
 
+example for querying a large schema file for *user* references in table names and table fields/keys:
+
+```bash
+    php schema_summary.php bigschema.sql user | less
+```
+
 
 ---
 
