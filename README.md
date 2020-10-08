@@ -130,6 +130,8 @@ Connect as root user.
 
 PHP CLI script to extract a brief summary of table names and foreign keys from large schema files.
 
+The optional keyword enables the script to search a large schema for keywords in table names (and table contents).
+
 
 ### Usage
 
