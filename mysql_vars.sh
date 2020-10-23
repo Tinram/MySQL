@@ -4,17 +4,17 @@
 #
 # Display important mysqld variables.
 # Use an SSH tunnel when connecting to a remote host.
-
+#
 # author      Martin Latter
 # copyright   Martin Latter 24/11/2016
-# version     0.19
+# version     0.20
 # license     GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 # link        https://github.com/Tinram/MySQL.git
 
 
 name="mysql_vars"
-version="v.0.19"
-date="20200915"
+version="v.0.20"
+date="20201023"
 mysqlPort="3306" # for remote host not listening on 3306; for 'localhost' MySQL connects with sockets (override: 127.0.0.1)
 scriptName=$0
 
@@ -94,15 +94,6 @@ main()
 		SHOW GLOBAL STATUS WHERE variable_name = 'Created_tmp_tables';
 		SHOW GLOBAL STATUS WHERE variable_name = 'Created_tmp_disk_tables'" 2>/dev/null
 
-	echo -e "\n\n~~ MYISAM KEY VARS ~~\n"
-	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
-		SHOW VARIABLES WHERE variable_name = 'myisam_sort_buffer_size';
-		SHOW VARIABLES WHERE variable_name = 'key_buffer_size'" 2>/dev/null
-		#SELECT
-			#(SELECT variable_value FROM information_schema.global_status WHERE variable_name = 'key_reads') AS key_reads,
-			#(SELECT variable_value FROM information_schema.global_status WHERE variable_name = 'key_read_requests') AS kr_requests,
-			#(SELECT (1 - key_reads / kr_requests) * 100) AS key_cache_hit_percentage";
-
 	echo -e "\n\n~~ INNODB KEY VARS ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 
@@ -130,6 +121,10 @@ main()
 		SHOW STATUS WHERE variable_name LIKE 'innodb_log_%';
 		SHOW STATUS WHERE variable_name LIKE 'innodb_row%'" 2>/dev/null
 
+	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
+		SELECT ROUND(100 - (100 * (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_pages_read')
+		/ (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_buffer_pool_read_requests')), 2) AS 'Buffer Pool Hit Rate';" 2>/dev/null
+
 	#echo -e "\n\n~~ INNODB STATUS ~~\n"
 	#mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 	#SHOW ENGINE INNODB STATUS\G";
@@ -145,6 +140,15 @@ main()
 		SHOW VARIABLES WHERE variable_name = 'join_buffer_size';
 		SHOW VARIABLES WHERE variable_name = 'sort_buffer_size';
 		SHOW VARIABLES WHERE variable_name = 'bulk_insert_buffer_size'" 2>/dev/null
+
+	echo -e "\n\n~~ MYISAM KEY VARS ~~\n"
+	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
+		SHOW VARIABLES WHERE variable_name = 'myisam_sort_buffer_size';
+		SHOW VARIABLES WHERE variable_name = 'key_buffer_size'" 2>/dev/null
+		#SELECT
+			#(SELECT variable_value FROM information_schema.global_status WHERE variable_name = 'key_reads') AS key_reads,
+			#(SELECT variable_value FROM information_schema.global_status WHERE variable_name = 'key_read_requests') AS kr_requests,
+			#(SELECT (1 - key_reads / kr_requests) * 100) AS key_cache_hit_percentage";
 
 	echo -e "\n\n~~ QUERY CACHE ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
