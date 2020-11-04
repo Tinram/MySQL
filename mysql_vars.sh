@@ -7,14 +7,14 @@
 #
 # author      Martin Latter
 # copyright   Martin Latter 24/11/2016
-# version     0.20
+# version     0.21
 # license     GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 # link        https://github.com/Tinram/MySQL.git
 
 
 name="mysql_vars"
-version="v.0.20"
-date="20201023"
+version="v.0.21"
+date="20201104"
 mysqlPort="3306" # for remote host not listening on 3306; for 'localhost' MySQL connects with sockets (override: 127.0.0.1)
 scriptName=$0
 
@@ -64,24 +64,24 @@ main()
 
 	echo -e "\n\n~~ CONNECTIONS ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
-		SHOW STATUS LIKE '%connect%';
-		SHOW VARIABLES WHERE variable_name = 'max_allowed_packet';
+		SHOW GLOBAL STATUS LIKE '%connect%';
+		SHOW GLOBAL VARIABLES WHERE variable_name = 'max_allowed_packet';
 		SHOW VARIABLES WHERE variable_name = 'max_connections';
 		SHOW STATUS WHERE variable_name = 'Max_used_connections';
 		SHOW STATUS WHERE variable_name = 'Max_used_connections_time';
 		SHOW VARIABLES WHERE variable_name = 'max_connect_errors';
-		SHOW VARIABLES WHERE variable_name = 'wait_timeout';
+		SHOW GLOBAL VARIABLES WHERE variable_name = 'wait_timeout';
 		SHOW VARIABLES WHERE variable_name = 'slow_launch_time';
 		SHOW STATUS WHERE variable_name ='Slow_launch_threads'" 2>/dev/null
 
 	echo -e "\n\n~~ THREADS ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 		SHOW VARIABLES WHERE variable_name = 'thread_cache_size';
-		SHOW STATUS WHERE variable_name LIKE 'Threads_%'" 2>/dev/null
+		SHOW GLOBAL STATUS WHERE variable_name LIKE 'Threads_%'" 2>/dev/null
 
 	echo -e "\n\n~~ TIMEOUTS ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
-		SHOW VARIABLES LIKE '%timeout%'" 2>/dev/null
+		SHOW GLOBAL VARIABLES LIKE '%timeout%'" 2>/dev/null
 
 	echo -e "\n\n~~ OPEN TABLES ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
@@ -90,14 +90,14 @@ main()
 
 	echo -e "\n\n~~ TEMPORARY TABLES ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
-		SHOW VARIABLES WHERE variable_name LIKE '%_table_size';
+		SHOW GLOBAL VARIABLES WHERE variable_name LIKE '%_table_size';
 		SHOW GLOBAL STATUS WHERE variable_name = 'Created_tmp_tables';
 		SHOW GLOBAL STATUS WHERE variable_name = 'Created_tmp_disk_tables'" 2>/dev/null
 
 	echo -e "\n\n~~ INNODB KEY VARS ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 
-		SHOW VARIABLES WHERE variable_name = 'innodb_strict_mode';
+		SHOW GLOBAL VARIABLES WHERE variable_name = 'innodb_strict_mode';
 		SHOW VARIABLES WHERE variable_name = 'innodb_file_format';
 		SHOW VARIABLES WHERE variable_name = 'innodb_file_per_table';
 		SHOW VARIABLES WHERE variable_name = 'innodb_buffer_pool_size';
@@ -116,10 +116,10 @@ main()
 
 	echo -e "\n\n~~ INNODB STATS ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
-		SHOW STATUS WHERE variable_name LIKE 'innodb_buffer_%';
-		SHOW STATUS WHERE variable_name LIKE 'innodb_data_%';
-		SHOW STATUS WHERE variable_name LIKE 'innodb_log_%';
-		SHOW STATUS WHERE variable_name LIKE 'innodb_row%'" 2>/dev/null
+		SHOW GLOBAL STATUS WHERE variable_name LIKE 'innodb_buffer_%';
+		SHOW GLOBAL STATUS WHERE variable_name LIKE 'innodb_data_%';
+		SHOW GLOBAL STATUS WHERE variable_name LIKE 'innodb_log_%';
+		SHOW GLOBAL STATUS WHERE variable_name LIKE 'innodb_row%'" 2>/dev/null
 
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 		SELECT ROUND(100 - (100 * (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_pages_read')
@@ -131,15 +131,15 @@ main()
 
 	echo -e "\n\n~~ KEYS ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
-		SHOW STATUS LIKE 'key%'" 2>/dev/null
+		SHOW GLOBAL STATUS LIKE 'key%'" 2>/dev/null
 
 	echo -e "\n\n~~ BUFFERS ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
-		SHOW VARIABLES WHERE variable_name = 'sql_buffer_result';
-		SHOW VARIABLES WHERE variable_name = 'read_buffer_size';
-		SHOW VARIABLES WHERE variable_name = 'join_buffer_size';
-		SHOW VARIABLES WHERE variable_name = 'sort_buffer_size';
-		SHOW VARIABLES WHERE variable_name = 'bulk_insert_buffer_size'" 2>/dev/null
+		SHOW GLOBAL VARIABLES WHERE variable_name = 'sql_buffer_result';
+		SHOW GLOBAL VARIABLES WHERE variable_name = 'read_buffer_size';
+		SHOW GLOBAL VARIABLES WHERE variable_name = 'join_buffer_size';
+		SHOW GLOBAL VARIABLES WHERE variable_name = 'sort_buffer_size';
+		SHOW GLOBAL VARIABLES WHERE variable_name = 'bulk_insert_buffer_size'" 2>/dev/null
 
 	echo -e "\n\n~~ MYISAM KEY VARS ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
@@ -152,9 +152,9 @@ main()
 
 	echo -e "\n\n~~ QUERY CACHE ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
-		SHOW VARIABLES WHERE variable_name = 'have_query_cache';
-		SHOW STATUS LIKE 'qcache_%';
-		SHOW VARIABLES LIKE 'query_cache_%'" 2>/dev/null
+		SHOW GLOBAL VARIABLES WHERE variable_name = 'have_query_cache';
+		SHOW GLOBAL STATUS LIKE 'qcache_%';
+		SHOW GLOBAL VARIABLES LIKE 'query_cache_%'" 2>/dev/null
 
 	echo -e "\n"
 }
