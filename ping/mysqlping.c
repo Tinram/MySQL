@@ -7,18 +7,18 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 02/09/2020
-	* @version       0.03
+	* @version       0.04
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
 	* Compile:
 	* (Linux GCC x64)
-	*                 required dependency: libmysqlclient-dev
-	*                 gcc mysqlping.c $(mysql_config --cflags) $(mysql_config --libs) -o mysqlping -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -std=gnu99 -s
+	*                required dependency: libmysqlclient-dev
+	*                gcc mysqlping.c $(mysql_config --cflags) $(mysql_config --libs) -o mysqlping -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -std=gnu99 -s
 	*
 	* Usage:
-	*                 ./mysqlping --help
-	*                 ./mysqlping -h <host> -u <username> [-f] [-p port]
+	*                ./mysqlping --help
+	*                ./mysqlping -u <username> [-h <host>] [-f] [-p port]
 */
 
 
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQL Ping"
-#define MB_VERSION "0.03"
+#define MB_VERSION "0.04"
 
 
 void menu(char* pProgname);
@@ -46,7 +46,7 @@ char* pUser = NULL;
 char* pPassword = NULL;
 char* pProgname = NULL;
 unsigned int iPort = 3306;
-unsigned iFlood = 0; // ping flood
+unsigned iFlood = 0; // ping flood flag
 unsigned int iSigCaught = 0;
 
 
@@ -91,9 +91,15 @@ int main(int iArgCount, char* aArgV[])
 		return EXIT_FAILURE;
 	}
 
-	mysql_real_connect(pConn, pHost, pUser, pPassword, NULL, iPort, NULL, 0);
-
-	fprintf(stdout, "pinging ...\n");
+	if (mysql_real_connect(pConn, pHost, pUser, pPassword, NULL, iPort, NULL, 0) == NULL)
+	{
+		fprintf(stderr, "\nCannot connect to MySQL server.\n\n");
+		return EXIT_FAILURE;
+	}
+	else
+	{
+		fprintf(stdout, "pinging %s...\n", pHost);
+	}
 
 	unsigned int iCounter = 0;
 
@@ -229,13 +235,18 @@ unsigned int options(int iArgCount, char* aArgV[])
 		fprintf(stdout, "\n%s v.%s\n\n", APP_NAME, MB_VERSION);
 		return 0;
 	}
-	else if (pHost == NULL || pUser == NULL)
+	else if (pUser == NULL)
 	{
-		fprintf(stderr, "\nMySQL Ping: use '%s --help' for help\n\n", aArgV[0]);
+		fprintf(stderr, "\n%s: use '%s --help' for help\n\n", APP_NAME, aArgV[0]);
 		return 0;
 	}
 	else
 	{
+		if (pHost == NULL)
+		{
+			pHost = "localhost";
+		}
+
 		return 1;
 	}
 }
@@ -252,5 +263,5 @@ void menu(char* pProgname)
 {
 	fprintf(stdout, "\n%s v.%s\nby Tinram", APP_NAME, MB_VERSION);
 	fprintf(stdout, "\n\nUsage:\n");
-	fprintf(stdout, "\t%s -h <host> -u <user> [-f] [-p port]\n\n", pProgname);
+	fprintf(stdout, "\t%s -u <user> [-h <host>] [-f] [-p port]\n\n", pProgname);
 }
