@@ -11,14 +11,14 @@
 #
 # author      Martin Latter
 # copyright   Martin Latter 19/08/2020
-# version     0.04
+# version     0.05
 # license     GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 # link        https://github.com/Tinram/MySQL.git
 
 
 refresh=1 # 1 second
 name="mysql_varmon"
-version="v.0.04"
+version="v.0.05"
 date="20201106"
 mysqlPort="3306"
 scriptName=$0
@@ -61,7 +61,7 @@ main()
 		mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 			SHOW STATUS WHERE variable_name = 'Threads_connected';
 			SHOW STATUS WHERE variable_name = 'Max_used_connections';
-			SHOW STATUS WHERE variable_name = 'Aborted_connects';
+			SHOW STATUS WHERE variable_name LIKE 'Aborted_%';
 			SHOW GLOBAL VARIABLES WHERE variable_name LIKE 'max_connect%';
 			SHOW STATUS WHERE variable_name = 'Connection_errors_max_connections'" 2>/dev/null
 
