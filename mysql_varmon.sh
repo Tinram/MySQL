@@ -11,15 +11,15 @@
 #
 # author      Martin Latter
 # copyright   Martin Latter 19/08/2020
-# version     0.03
+# version     0.04
 # license     GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 # link        https://github.com/Tinram/MySQL.git
 
 
 refresh=1 # 1 second
 name="mysql_varmon"
-version="v.0.03"
-date="20201105"
+version="v.0.04"
+date="20201106"
 mysqlPort="3306"
 scriptName=$0
 
@@ -57,16 +57,18 @@ main()
 
 		clear
 
-		echo -e "\n\n~~ THREADS ~~\n"
-		mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
-			SHOW VARIABLES WHERE variable_name = 'thread_cache_size';
-			SHOW GLOBAL STATUS WHERE variable_name LIKE 'Threads_%'" 2>/dev/null
-
 		echo -e "\n\n~~ CONNECTIONS ~~\n"
 		mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
-			SHOW GLOBAL VARIABLES WHERE variable_name LIKE 'max_connect%';
+			SHOW STATUS WHERE variable_name = 'Threads_connected';
 			SHOW STATUS WHERE variable_name = 'Max_used_connections';
 			SHOW STATUS WHERE variable_name = 'Aborted_connects';
+			SHOW GLOBAL VARIABLES WHERE variable_name LIKE 'max_connect%';
+			SHOW STATUS WHERE variable_name = 'Connection_errors_max_connections'" 2>/dev/null
+
+		echo -e "\n\n~~ THREADS ~~\n"
+		mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
+			SHOW GLOBAL STATUS WHERE variable_name LIKE 'Threads_%';
+			SHOW VARIABLES WHERE variable_name = 'thread_cache_size';
 			SHOW VARIABLES WHERE variable_name = 'slow_launch_time';
 			SHOW STATUS WHERE variable_name ='Slow_launch_threads'" 2>/dev/null
 
