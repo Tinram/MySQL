@@ -27,4 +27,4 @@ If the host switch is omitted, *mysqlmon* attempts to connect to a localhost ins
 
 ## License
 
-*mysqlping* is released under the [GPL v.3](https://www.gnu.org/licenses/gpl-3.0.html).
+*mysqlmon* is released under the [GPL v.3](https://www.gnu.org/licenses/gpl-3.0.html).
