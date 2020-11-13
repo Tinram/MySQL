@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.05
+	* @version       0.06
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.05"
+#define MB_VERSION "0.06"
 
 
 void menu(char* pProgname);
@@ -432,5 +432,5 @@ void menu(char* pProgname)
 {
 	fprintf(stdout, "\n%s v.%s\nby Tinram", APP_NAME, MB_VERSION);
 	fprintf(stdout, "\n\nUsage:\n");
-	fprintf(stdout, "\t%s -u <user> [-h <host>] [-p port]\n\n", pProgname);
+	fprintf(stdout, "\t%s -u <user> [-h <host>] [-p <port>]\n\n", pProgname);
 }
