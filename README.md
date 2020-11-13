@@ -1,8 +1,14 @@
 
 # MySQL
 
-#### MySQL utility scripts.
 
+#### MySQL utility programs.
+
++ [mysqlmon](https://github.com/Tinram/MySQL/tree/master/mysqlmon)
++ [mysqlping](https://github.com/Tinram/MySQL/tree/master/mysqlping)
+
+
+#### MySQL utility scripts.
 
 + [mysql\_vars.sh](#mysqlvars)
 + [mysql\_varmon.sh](#mysqlvarmon)
@@ -275,4 +281,4 @@ If `USE_FILE` in the top configuration section is set to `True`, the script will
 
 ## License
 
-Scripts released under the [GPL v.3](https://www.gnu.org/licenses/gpl-3.0.html).
+Scripts and programs released under the [GPL v.3](https://www.gnu.org/licenses/gpl-3.0.html).
