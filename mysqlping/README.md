@@ -6,9 +6,9 @@
 
 ## Purpose
 
-`mysqladmin ping` pings MySQL, yet I needed something more than just a single '*mysqld is alive*' response.
+`mysqladmin ping` pings MySQL, yet I wanted something more than just a single '*mysqld is alive*' response.
 
-*mysqlping* pings a MySQL connection once a second, or with the `-f` switch, generates a flood of pings.
+*mysqlping* pings a MySQL connection once a second, or using the `-f` switch, generates a flood of pings.
 
 
 ## OS Support
@@ -25,6 +25,8 @@
 ```
 
 If the host switch is omitted, *mysqlping* attempts to connect to a localhost instance of *mysqld*.
+
+<kbd>Ctrl</kbd> + <kbd>C</kbd> to exit.
 
 
 ## License
