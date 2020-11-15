@@ -2,13 +2,13 @@
 # MySQL
 
 
-#### MySQL utility programs.
+#### Programs
 
 + [mysqlmon](https://github.com/Tinram/MySQL/tree/master/mysqlmon)
 + [mysqlping](https://github.com/Tinram/MySQL/tree/master/mysqlping)
 
 
-#### MySQL utility scripts.
+#### Scripts
 
 + [mysql\_vars.sh](#mysqlvars)
 + [mysql\_varmon.sh](#mysqlvarmon)
@@ -29,11 +29,11 @@
 
 ### Purpose
 
-Display important mysqld variables.
+Display important MySQL server variables.
 
 Uses Bash for server portability.
 
-Use Meld / differ to compare servers.
+Can use with a differ to compare servers.
 
 
 ### Set-up
@@ -49,12 +49,12 @@ Use Meld / differ to compare servers.
     ./mysql_vars.sh
 ```
 
-&ndash; prompts for host, username, and password (not echoed) of the mysql server.
+&ndash; prompts for host, username, and password (not echoed) of the MySQL server.
 
 
 #### Usage on Windows
 
-On Windows, via a PuTTY connection, the script output may exceed PuTTY's scrollback limit. I chose an interactive connection input for my usage on Linux-to-Linux (avoiding switches). However, this does mean stdout redirection is blocked.
+On Windows, via a PuTTY connection, the script output may exceed PuTTY's scrollback limit. I chose an interactive connection input for my usage on Linux-to-Linux (avoiding switches). However, this does mean that *stdout* redirection is blocked.
 
 Short of rewriting the command-line parsing, a workaround is:
 
@@ -72,7 +72,7 @@ Short of rewriting the command-line parsing, a workaround is:
 
 ### Purpose
 
-Continously monitor mysqld variables.
+Continously monitor MySQL server variables.
 
 Uses Bash for server portability.
 
@@ -90,7 +90,7 @@ Uses Bash for server portability.
     ./mysql_varmon.sh
 ```
 
-&ndash; prompts for host, username, and password (not echoed) of the mysql server.
+&ndash; prompts for host, username, and password (not echoed) of the MySQL server.
 
 
 <kbd>Ctrl</kbd> + <kbd>C</kbd> to exit.
@@ -107,7 +107,7 @@ Uses Bash for server portability.
 
 List GRANTs.
 
-Similar to, yet simpler than, *pt-show-grants*.  
+Similar to *pt-show-grants*, with cleaner output.  
 Connect as root user.
 
 
@@ -134,7 +134,7 @@ Connect as root user.
 
 ### Purpose
 
-PHP CLI script to extract a brief summary of table names and foreign keys from large schema files.
+PHP CLI script to extract a brief summary of table names and foreign keys from large unwieldy schema files.
 
 The optional keyword enables the script to search a large schema for keywords in table names (and table contents).
 
@@ -145,7 +145,7 @@ The optional keyword enables the script to search a large schema for keywords in
     php schema_summary.php <filename> [keyword]
 ```
 
-example for querying a large schema file for *user* references in table names and table fields/keys:
+example for querying a large schema file for *user* references in table names and table fields / keys:
 
 ```bash
     php schema_summary.php bigschema.sql user | less
@@ -161,7 +161,7 @@ example for querying a large schema file for *user* references in table names an
 
 ### Purpose
 
-PHP CLI script to split a large MySQL schema file by table definitions into separate .sql files.
+PHP CLI script to split a large MySQL schema file by table definitions into separate *.sql* files.
 
 
 ### Usage
@@ -281,4 +281,4 @@ If `USE_FILE` in the top configuration section is set to `True`, the script will
 
 ## License
 
-Scripts and programs released under the [GPL v.3](https://www.gnu.org/licenses/gpl-3.0.html).
+Scripts and executables released under the [GPL v.3](https://www.gnu.org/licenses/gpl-3.0.html).
