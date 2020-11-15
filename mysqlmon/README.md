@@ -6,7 +6,7 @@
 
 ## Purpose
 
-Created to display key *mysqld* parameters while Sysbench load testing.
+Created to display rapidly changing *mysqld* parameters while Sysbench load testing.
 
 
 ## OS Support
@@ -23,6 +23,8 @@ Created to display key *mysqld* parameters while Sysbench load testing.
 ```
 
 If the host switch is omitted, *mysqlmon* attempts to connect to a localhost instance of *mysqld*.
+
+<kbd>Ctrl</kbd> + <kbd>C</kbd> to exit.
 
 
 ## License
