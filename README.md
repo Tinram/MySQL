@@ -74,7 +74,7 @@ Short of rewriting the command-line parsing, a workaround is:
 
 Continously monitor MySQL server variables.
 
-Uses Bash for server portability.
+Uses Bash for server portability and updating ease &ndash; but a flickery terminal refresh.  This led to [mysqlmon](https://github.com/Tinram/MySQL/tree/master/mysqlmon).
 
 
 ### Set-up
