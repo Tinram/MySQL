@@ -1,8 +1,13 @@
 
 # mysqlmon
 
-#### mysqld parameters monitor.
+#### *mysqld* parameters monitor.
 
+
+[1]: https://tinram.github.io/images/mysqlmon.png
+![mysqlbrute][1]
+
+<br>
 
 ## Purpose
 
