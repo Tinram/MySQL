@@ -1,7 +1,7 @@
 
 # mysqlmon
 
-#### *mysqld* parameters monitor.
+#### *mysqld* counters monitor.
 
 
 [1]: https://tinram.github.io/images/mysqlmon.png
@@ -11,7 +11,7 @@
 
 ## Purpose
 
-Created to display rapidly changing *mysqld* parameters while Sysbench load testing.
+Created to continously monitor *mysqld* counters during Sysbench load testing.
 
 
 ## OS Support
