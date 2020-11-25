@@ -29,11 +29,11 @@
 
 ### Purpose
 
-Display important MySQL server variables.
+Display important MySQL server variables and counters.
 
 Uses Bash for server portability.
 
-Can use with a differ to compare servers.
+Output can be easily be diffed to compare servers.
 
 
 ### Set-up
@@ -54,7 +54,7 @@ Can use with a differ to compare servers.
 
 #### Usage on Windows
 
-On Windows, via a PuTTY connection, the script output may exceed PuTTY's scrollback limit. I chose an interactive connection input for my usage on Linux-to-Linux (avoiding switches). However, this does mean that *stdout* redirection is blocked.
+On Windows, via a PuTTY connection, the script output may exceed PuTTY's scrollback limit. I chose an interactive connection input for my usage on Linux-to-Linux machines (avoiding switches). Nevertheless, this means that *stdout* redirection is blocked.
 
 Short of rewriting the command-line parsing, a workaround is:
 
@@ -74,7 +74,8 @@ Short of rewriting the command-line parsing, a workaround is:
 
 Continously monitor MySQL server variables.
 
-Uses Bash for server portability and updating ease &ndash; but a flickery terminal refresh.  This led to [mysqlmon](https://github.com/Tinram/MySQL/tree/master/mysqlmon).
+Uses Bash for server portability and updating ease (but posesses a flickery terminal refresh).  
+This directly led to [mysqlmon](https://github.com/Tinram/MySQL/tree/master/mysqlmon).
 
 
 ### Set-up
