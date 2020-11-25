@@ -1,14 +1,14 @@
 
 # mysqlping
 
-#### MySQL pinger.
+#### Continuous MySQL pinger.
 
 
 ## Purpose
 
-`mysqladmin ping` pings MySQL, yet I wanted something more than just a single '*mysqld is alive*' response.
+The command `mysqladmin ping` pings a MySQL instance, yet I wanted something more than just a '*mysqld is alive*' single response message. Especially if a network connection to the database is flaky.
 
-*mysqlping* pings a MySQL connection once a second, or using the `-f` switch, generates a flood of pings.
+*mysqlping* by default pings a MySQL connection once a second. With the `-f` switch, the program generates a flood of pings.
 
 
 ## OS Support
@@ -20,6 +20,8 @@
 
 ```bash
     ./mysqlping -u <username> [-h <host>] [-f] [-p <port>]
+
+    ./mysqlping -u root
 
     ./mysqlping --help
 ```
