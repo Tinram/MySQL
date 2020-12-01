@@ -24,10 +24,12 @@ Created to continously monitor *mysqld* counters during Sysbench load testing.
 ```bash
     ./mysqlmon -u <username> [-h <host>] [-p <port>]
 
+    ./mysqlmon -u root
+
     ./mysqlmon --help
 ```
 
-If the host switch is omitted, *mysqlmon* attempts to connect to a localhost instance of *mysqld*.
+If the host switch `-h` is omitted, *mysqlmon* attempts to connect to a localhost instance of *mysqld*.
 
 <kbd>Ctrl</kbd> + <kbd>C</kbd> to exit.
 
