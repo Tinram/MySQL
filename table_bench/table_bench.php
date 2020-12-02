@@ -2,7 +2,7 @@
 <?php
 
 /**
-    * Execute TableBench class using values from configuration file.
+    * Execute TableBench class using values from configuration file (config.php).
 */
 
 declare(strict_types=1);
