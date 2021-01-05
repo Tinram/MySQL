@@ -2,8 +2,10 @@
 # makefile for mysqlmon
 
 CC = gcc
-CFLAGS = -lncurses -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -std=gnu99 -s
 NAME = mysqlmon
+
+CFLAGS = -lncurses -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -Wformat=2 -Wunused-parameter -Wshadow -Wstrict-prototypes -Wold-style-definition -Wredundant-decls -Wnested-externs -Wmissing-include-dirs -Wformat-security -std=gnu99 -flto -s
+
 
 MYSQLCFLAGS = $(shell mysql_config --cflags)
 MYSQLLIBS = $(shell mysql_config --libs)
