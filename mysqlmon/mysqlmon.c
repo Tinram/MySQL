@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.06
+	* @version       0.07
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,10 +33,10 @@
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.06"
+#define MB_VERSION "0.07"
 
 
-void menu(char* pProgname);
+void menu(char* const pFName);
 unsigned int options(int iArgCount, char* aArgV[]);
 void signal_handler(int sig);
 
@@ -45,7 +45,7 @@ char* pHost = NULL;
 char* pUser = NULL;
 char* pPassword = NULL;
 char* pProgname = NULL;
-char* pRoot = "root";
+const char* pRoot = "root";
 unsigned int iPort = 3306;
 unsigned int iSigCaught = 0;
 
@@ -67,7 +67,7 @@ int main(int iArgCount, char* aArgV[])
 {
 	unsigned int iMenu = options(iArgCount, aArgV);
 	MYSQL* pConn;
-	char* pMaria = "MariaDB";
+	const char* pMaria = "MariaDB";
 	unsigned int iMaria = 0;
 
 	pProgname = aArgV[0];
@@ -424,13 +424,13 @@ unsigned int options(int iArgCount, char* aArgV[])
 /**
 	* Display menu.
 	*
-	* @param   char* pProgname, filename from aArgV[0]
+	* @param   char* pFName, filename from aArgV[0]
 	* @return  void
 */
 
-void menu(char* pProgname)
+void menu(char* const pFName)
 {
 	fprintf(stdout, "\n%s v.%s\nby Tinram", APP_NAME, MB_VERSION);
 	fprintf(stdout, "\n\nUsage:\n");
-	fprintf(stdout, "\t%s -u <user> [-h <host>] [-p <port>]\n\n", pProgname);
+	fprintf(stdout, "\t%s -u <user> [-h <host>] [-p <port>]\n\n", pFName);
 }

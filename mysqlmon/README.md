@@ -5,7 +5,7 @@
 
 
 [1]: https://tinram.github.io/images/mysqlmon.png
-![mysqlbrute][1]
+![mysqlmon][1]
 
 <br>
 
