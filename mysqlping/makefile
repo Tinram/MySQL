@@ -2,8 +2,9 @@
 # makefile for mysqlping
 
 CC = gcc
-CFLAGS = -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -std=gnu99 -s
 NAME = mysqlping
+
+CFLAGS = -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -Wformat=2 -Wunused-parameter -Wshadow -Wstrict-prototypes -Wold-style-definition -Wredundant-decls -Wnested-externs -Wmissing-include-dirs -Wformat-security -std=gnu99 -s
 
 MYSQLCFLAGS = $(shell mysql_config --cflags)
 MYSQLLIBS = $(shell mysql_config --libs)
