@@ -7,14 +7,14 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 02/09/2020
-	* @version       0.05
+	* @version       0.06
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
 	* Compile:
 	* (Linux GCC x64)
 	*                required dependency: libmysqlclient-dev
-	*                gcc mysqlping.c $(mysql_config --cflags) $(mysql_config --libs) -o mysqlping -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -std=gnu99 -s
+	*                gcc mysqlping.c $(mysql_config --cflags) $(mysql_config --libs) -o mysqlping -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -Wformat=2 -Wunused-parameter -Wshadow -Wstrict-prototypes -Wold-style-definition -Wredundant-decls -Wnested-externs -Wmissing-include-dirs -Wformat-security -std=gnu99 -s
 	*
 	* Usage:
 	*                ./mysqlping --help
@@ -33,10 +33,10 @@
 
 
 #define APP_NAME "MySQL Ping"
-#define MB_VERSION "0.05"
+#define MB_VERSION "0.06"
 
 
-void menu(char* pProgname);
+void menu(char* const pFName);
 unsigned int options(int iArgCount, char* aArgV[]);
 void signal_handler(int sig);
 
@@ -46,7 +46,7 @@ char* pUser = NULL;
 char* pPassword = NULL;
 char* pProgname = NULL;
 unsigned int iPort = 3306;
-unsigned iFlood = 0; // ping flood flag
+unsigned int iFlood = 0; // ping flood flag
 unsigned int iSigCaught = 0;
 
 
@@ -255,13 +255,13 @@ unsigned int options(int iArgCount, char* aArgV[])
 /**
 	* Display menu.
 	*
-	* @param   char* pProgname, filename from aArgV[0]
+	* @param   char* pFName, filename from aArgV[0]
 	* @return  void
 */
 
-void menu(char* pProgname)
+void menu(char* const pFName)
 {
 	fprintf(stdout, "\n%s v.%s\nby Tinram", APP_NAME, MB_VERSION);
 	fprintf(stdout, "\n\nUsage:\n");
-	fprintf(stdout, "\t%s -u <user> [-h <host>] [-f] [-p <port>]\n\n", pProgname);
+	fprintf(stdout, "\t%s -u <user> [-h <host>] [-f] [-p <port>]\n\n", pFName);
 }
