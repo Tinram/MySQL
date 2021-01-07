@@ -4,18 +4,18 @@
 
 #### Programs
 
-+ [mysqlmon](https://github.com/Tinram/MySQL/tree/master/mysqlmon)
-+ [mysqlping](https://github.com/Tinram/MySQL/tree/master/mysqlping)
++ [mysqlmon](https://github.com/Tinram/MySQL/tree/master/mysqlmon) &ndash; *mysqld* counters monitor
++ [mysqlping](https://github.com/Tinram/MySQL/tree/master/mysqlping) &ndash; continuous pinger
 
 
 #### Scripts
 
-+ [mysql\_vars.sh](#mysqlvars)
-+ [mysql\_varmon.sh](#mysqlvarmon)
++ [mysql\_vars.sh](#mysqlvars) &ndash; variable display
++ [mysql\_varmon.sh](#mysqlvarmon) &ndash; variable monitor
 + [mysql\_grants.sh](#mysqlgrants)
-+ [schema\_summary.php](#schemasummary)
++ [schema\_summary.php](#schemasummary) &ndash; schema info extractor
 + [schema\_splitter.php](#schemasplitter)
-+ [table\_bench/table\_bench.php](#tablebench)
++ [table\_bench/table\_bench.php](#tablebench) &ndash; insert timer
 + [table\_sizer.php](#tablesizer)
 + [innodb\_status\_parser.py](#innodbstatusparser)
 
@@ -74,7 +74,7 @@ Short of rewriting the command-line parsing, a workaround is:
 
 Continously monitor MySQL server variables.
 
-Uses Bash for server portability and updating ease (but posesses a flickery terminal refresh).  
+Uses Bash for server portability and updating ease (but possesses a flickery terminal refresh).  
 This directly led to [mysqlmon](https://github.com/Tinram/MySQL/tree/master/mysqlmon).
 
 
@@ -187,11 +187,10 @@ example:
 
 ### Purpose
 
-+ Time row inserts into a MySQL table through configuration toggles controlling connection API, transactions etc.
++ Time row inserts into a MySQL table through configuration toggles controlling transactions, prepared statements etc.
++ Provides a timing harness for altering *mysqld* variables.
 
-+ Provides a timing harness for altering mysqld variables.
-
-Timings are often highly variable, so require much averaging. Nevertheless, large time differences are noticeable for prepared statements and my.cnf variables adjusted for INSERTs.
+Timings are often highly variable, and so require much averaging. Nevertheless, large time differences are noticeable for prepared statements and *my.cnf* variables adjusted for INSERTs.
 
 
 ### Usage
