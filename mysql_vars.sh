@@ -8,14 +8,14 @@
 #
 # author      Martin Latter
 # copyright   Martin Latter 24/11/2016
-# version     0.23
+# version     0.24
 # license     GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 # link        https://github.com/Tinram/MySQL.git
 
 
 name="mysql_vars"
-version="v.0.23"
-date="20210914"
+version="v.0.24"
+date="20210915"
 mysqlPort="3306" # for remote host not listening on 3306; for 'localhost' MySQL connects with sockets (override: 127.0.0.1)
 scriptName=$0
 declare -i v8=0
@@ -157,7 +157,9 @@ main()
 		echo -e "\n\n~~ INNODB (v.8) ~~\n"
 		mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 			SHOW VARIABLES WHERE variable_name = 'innodb_dedicated_server';
-			SHOW VARIABLES WHERE variable_name = 'innodb_log_writer_threads'" 2>/dev/null
+			SHOW VARIABLES WHERE variable_name = 'innodb_log_writer_threads';
+			SHOW VARIABLES WHERE variable_name = 'innodb_undo_log_encrypt';
+			SHOW VARIABLES WHERE variable_name = 'innodb_redo_log_encrypt'" 2>/dev/null
 	fi
 
 	echo -e "\n"
@@ -175,6 +177,14 @@ main()
 		SHOW GLOBAL VARIABLES WHERE variable_name = 'sort_buffer_size';
 		SHOW GLOBAL VARIABLES WHERE variable_name = 'bulk_insert_buffer_size'" 2>/dev/null
 
+	echo -e "\n\n~~ PERFORMANCE SCHEMA ~~\n"
+	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
+		SHOW VARIABLES WHERE variable_name = 'performance_schema'" 2>/dev/null
+
+	echo -e "\n\n~~ EVENT SCHEDULER ~~\n"
+	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
+		SHOW VARIABLES WHERE variable_name = 'event_scheduler'" 2>/dev/null
+
 	echo -e "\n\n~~ QUERY CACHE ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 		SHOW GLOBAL VARIABLES WHERE variable_name = 'have_query_cache'" 2>/dev/null
@@ -183,12 +193,21 @@ main()
 	#	SHOW GLOBAL STATUS LIKE 'qcache_%';
 	#	SHOW GLOBAL VARIABLES LIKE 'query_cache_%'" 2>/dev/null
 
-	echo -e "\n\n~~ LOGS ~~\n"
+	echo -e "\n\n~~ REPLICATION ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 		SHOW VARIABLES WHERE variable_name = 'log_bin';
 		SHOW VARIABLES WHERE variable_name = 'sync_binlog';
 		SHOW VARIABLES WHERE variable_name = 'binlog_format';
-		SHOW VARIABLES WHERE variable_name = 'relay_log';
+		SHOW VARIABLES WHERE variable_name = 'binlog_encryption';
+		SHOW VARIABLES WHERE variable_name = 'log_bin_basename';
+		SHOW VARIABLES WHERE variable_name = 'log_bin_index';
+		SHOW VARIABLES WHERE variable_name = 'gtid_mode';
+		SHOW VARIABLES WHERE variable_name = 'enforce_gtid_consistency';
+		SHOW VARIABLES WHERE variable_name = 'server_id';
+		SHOW VARIABLES WHERE variable_name = 'relay_log'" 2>/dev/null
+
+	echo -e "\n\n~~ LOGS ~~\n"
+	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 		SHOW VARIABLES WHERE variable_name = 'log_error';
 		SHOW VARIABLES WHERE variable_name = 'log_error_verbosity';
 		SHOW VARIABLES WHERE variable_name = 'slow_query_log';
