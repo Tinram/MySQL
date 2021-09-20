@@ -8,14 +8,14 @@
 #
 # author      Martin Latter
 # copyright   Martin Latter 24/11/2016
-# version     0.24
+# version     0.25
 # license     GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 # link        https://github.com/Tinram/MySQL.git
 
 
 name="mysql_vars"
-version="v.0.24"
-date="20210915"
+version="v.0.25"
+date="20210920"
 mysqlPort="3306" # for remote host not listening on 3306; for 'localhost' MySQL connects with sockets (override: 127.0.0.1)
 scriptName=$0
 declare -i v8=0
@@ -187,7 +187,9 @@ main()
 
 	echo -e "\n\n~~ QUERY CACHE ~~\n"
 	mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
-		SHOW GLOBAL VARIABLES WHERE variable_name = 'have_query_cache'" 2>/dev/null
+		SHOW GLOBAL VARIABLES WHERE variable_name = 'have_query_cache';
+		SHOW GLOBAL VARIABLES WHERE variable_name = 'query_cache_type';
+		SHOW GLOBAL VARIABLES WHERE variable_name = 'query_cache_size'" 2>/dev/null
 
 	#mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 	#	SHOW GLOBAL STATUS LIKE 'qcache_%';
