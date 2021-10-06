@@ -2,10 +2,12 @@
 <?php
 
 /**
-    * PHP CLI script to extract a brief summary of table names and foreign keys from large schema files.
+    * PHP CLI script to extract a summary of table names and foreign keys from large schema files.
     *
     * Usage:
     *        php schema_summary.php <schema_file.sql> [keyword]
+    *
+    *            (keyword is case sensitive)
 */
 
 
@@ -42,13 +44,13 @@ else
 final class SchemaSummary
 {
     /**
-        * Parse large MySQL schema files to extract a brief summary of table names and foreign keys.
+        * Parse large MySQL schema files to extract a summary of table names and foreign keys and search for keywords.
         *
         * Coded to PHP 7.2
         *
         * @author         Martin Latter
         * @copyright      Martin Latter 06/08/2020
-        * @version        0.03, derived from Database Filler v.0.53
+        * @version        0.04, derived from Database Filler v.0.53
         * @license        GNU GPL v3.0
         * @link           https://github.com/Tinram/MySQL.git
     */
@@ -152,7 +154,7 @@ final class SchemaSummary
             {
                 if (strpos($sTable, $this->sSearchTerm) !== false)
                 {
-                    $this->processSQLTable($sTable);
+                    $this->processSQLTable($sTable, $bSearch = true);
                 }
             }
         }
@@ -163,11 +165,12 @@ final class SchemaSummary
         * Process each table schema.
         *
         * @param   string $sTable, table schema string
+        * @param   boolean $bSearch, search term toggle
         *
         * @return  void
     */
 
-    private function processSQLTable(string $sTable): void
+    private function processSQLTable(string $sTable, bool $bSearch = false): void
     {
         $aRXResults = [];
         $aLines = explode(PHP_EOL, $sTable);
@@ -175,18 +178,34 @@ final class SchemaSummary
         # extract table name
         preg_match('/`([\w\-]+)`/', $aLines[0], $aRXResults);
         $sTableName = $aRXResults[1];
-        $this->aMessages[] = PHP_EOL . '+ ' . $sTableName;
+        $this->aMessages[] = PHP_EOL . '+ ' . $sTableName . PHP_EOL;
 
-        # extract foreign key lines
-        $iFKStart = stripos($sTable, 'FOREIGN KEY');
-
-        if ($iFKStart !== false)
+        if ($bSearch === true)
         {
-            $iFKEnd = strpos($sTable, PHP_EOL, $iFKStart); # EOL marker
-            $sFKCont = substr($sTable, $iFKStart, $iFKEnd);
-            $sFKCont = rtrim($sFKCont, ') ');
-            $sFKCont = str_replace('  ', self::INDENT, $sFKCont);
-            $this->aMessages[] = self::INDENT . $sFKCont;
+            $sNeedleLine = '/.+' . $this->sSearchTerm . '.+[\n\r]/';
+            $iMatches = preg_match_all($sNeedleLine, $sTable, $aRXResults, PREG_SET_ORDER);
+
+            if ($iMatches > 0)
+            {
+                foreach ($aRXResults as $aR)
+                {
+                    $this->aMessages[] = self::INDENT . $aR[0];
+                }
+            }
+        }
+        else
+        {
+            # extract foreign key lines
+            $iFKStart = stripos($sTable, 'FOREIGN KEY');
+
+            if ($iFKStart !== false)
+            {
+                $iFKEnd = strpos($sTable, PHP_EOL, $iFKStart); # EOL marker
+                $sFKCont = substr($sTable, $iFKStart, $iFKEnd);
+                $sFKCont = rtrim($sFKCont, ') ');
+                $sFKCont = str_replace('  ', self::INDENT, $sFKCont);
+                $this->aMessages[] = self::INDENT . $sFKCont;
+            }
         }
     }
 
