@@ -13,7 +13,8 @@
 + [mysql\_vars.sh](#mysqlvars) &ndash; variable display
 + [mysql\_varmon.sh](#mysqlvarmon) &ndash; variable monitor
 + [mysql\_grants.sh](#mysqlgrants)
-+ [schema\_summary.php](#schemasummary) &ndash; schema info extractor
++ [schema\_cleaner.php](#schemacleaner) &ndash; schema file reducer
++ [schema\_summary.php](#schemasummary) &ndash; schema file info extractor
 + [schema\_splitter.php](#schemasplitter)
 + [table\_bench/table\_bench.php](#tablebench) &ndash; insert timer
 + [table\_sizer.php](#tablesizer)
@@ -129,6 +130,24 @@ Connect as root user.
 ---
 
 
+<a id="schemacleaner"></a>
+## *schema_cleaner.php*
+
+
+### Purpose
+
+PHP CLI script to reduce large schema files to just table definitions i.e. removing *mysqldump* comments and directives.
+
+
+### Usage
+
+```bash
+    php schema_cleaner.php <filename>
+```
+
+
+---
+
 <a id="schemasummary"></a>
 ## *schema_summary.php*
 
@@ -137,7 +156,7 @@ Connect as root user.
 
 PHP CLI script to extract a brief summary of table names and foreign keys from large unwieldy schema files.
 
-The optional keyword enables the script to search a large schema for keywords in table names (and table contents).
+The keyword option enables searching for keywords in table names and table contents.
 
 
 ### Usage
@@ -146,7 +165,7 @@ The optional keyword enables the script to search a large schema for keywords in
     php schema_summary.php <filename> [keyword]
 ```
 
-example for querying a large schema file for *user* references in table names and table fields / keys:
+Example for querying a large schema file for *user* references in table names and columns:
 
 ```bash
     php schema_summary.php bigschema.sql user | less
