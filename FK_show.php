@@ -26,7 +26,7 @@ final class FKShow
         *
         * @author         Martin Latter
         * @copyright      Martin Latter 26/10/2021
-        * @version        0.01
+        * @version        0.02
         * @license        GNU GPL v3.0
         * @link           https://github.com/Tinram/MySQL.git
     */
@@ -142,7 +142,7 @@ final class FKShow
         {
             //if ($sTable !== 'approvals') {continue;}
 
-            $this->aMessages[] = strtoupper($sTable);
+            $this->aMessages[] = $sTable;
 
             foreach ($aKeys as $a)
             {
