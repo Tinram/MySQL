@@ -7,11 +7,11 @@ $aConfiguration =
     'query_database' => 'basketball',
 
     ##################################
-
-    'host'     => 'localhost',
-    'database' => 'information_schema',
     'username' => 'general',
     'password' => 'password',
+    ##################################
+    'host'     => 'localhost',
+    'database' => 'information_schema'
 ];
 
 
@@ -26,7 +26,7 @@ final class FKShow
         *
         * @author         Martin Latter
         * @copyright      Martin Latter 26/10/2021
-        * @version        0.02
+        * @version        0.03
         * @license        GNU GPL v3.0
         * @link           https://github.com/Tinram/MySQL.git
     */
@@ -60,7 +60,7 @@ final class FKShow
         }
         else
         {
-            $this->db = new mysqli($aConfig['host'], $aConfig['username'], $aConfig['password'], $aConfig['database']);
+            $this->db = @new mysqli($aConfig['host'], $aConfig['username'], $aConfig['password'], $aConfig['database']);
 
             if ($this->db->connect_errno === 0)
             {
@@ -99,6 +99,22 @@ final class FKShow
     */
     private function getFK(string $sDatabase): void
     {
+        $sDBExists = '
+            SELECT
+                SCHEMA_NAME
+            FROM
+                information_schema.SCHEMATA
+            WHERE
+                SCHEMA_NAME = "' . $sDatabase . '"';
+
+        $rR = $this->db->query($sDBExists);
+
+        if ($rR->num_rows === 0)
+        {
+            $this->aMessages[] = 'Database \'' . $sDatabase . '\' does not exist or is not accessible by script\'s user.';
+            return;
+        }
+
         $sFKQuery = '
             SELECT
                 kcu.TABLE_NAME "table",
