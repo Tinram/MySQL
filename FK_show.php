@@ -4,14 +4,10 @@ declare(strict_types=1);
 
 $aConfiguration =
 [
-    'query_database' => 'basketball',
-
-    ##################################
+    'database' => 'basketball',
     'username' => 'general',
     'password' => 'password',
-    ##################################
-    'host'     => 'localhost',
-    'database' => 'information_schema'
+    'host'     => 'localhost'
 ];
 
 
@@ -26,7 +22,7 @@ final class FKShow
         *
         * @author         Martin Latter
         * @copyright      Martin Latter 26/10/2021
-        * @version        0.03
+        * @version        0.04
         * @license        GNU GPL v3.0
         * @link           https://github.com/Tinram/MySQL.git
     */
@@ -60,7 +56,7 @@ final class FKShow
         }
         else
         {
-            $this->db = @new mysqli($aConfig['host'], $aConfig['username'], $aConfig['password'], $aConfig['database']);
+            $this->db = @new mysqli($aConfig['host'], $aConfig['username'], $aConfig['password'], 'information_schema');
 
             if ($this->db->connect_errno === 0)
             {
@@ -74,7 +70,7 @@ final class FKShow
             }
         }
 
-        $this->getFK($aConfig['query_database']);
+        $this->getFK($aConfig['database']);
 
         $this->processFK();
     }
@@ -117,7 +113,7 @@ final class FKShow
 
         $sFKQuery = '
             SELECT
-                kcu.TABLE_NAME "table",
+                DISTINCT(kcu.TABLE_NAME) "table",
                 kcu.COLUMN_NAME "fk_column",
                 kcu.REFERENCED_TABLE_NAME "ref_table",
                 kcu.REFERENCED_COLUMN_NAME "ref_table_key",
