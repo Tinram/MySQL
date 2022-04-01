@@ -17,6 +17,11 @@ Created to continously monitor *mysqld* counters during Sysbench load testing.
 ## OS Support
 
 + Linux x64
++ MacOS
+    + use *Clang*
+    + missing libraries:
+        + `brew --prefix <lib>` # = path
+        + `-L/<path>` in *make*-generated *Clang* call
 
 
 ## Usage
