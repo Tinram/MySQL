@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.08
+	* @version       0.09
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.08"
+#define MB_VERSION "0.09"
 
 
 void menu(char* const pFName);
@@ -122,7 +122,7 @@ int main(int iArgCount, char* aArgV[])
 	}
 	mysql_free_result(result_ver);
 
-	mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* total queries not conn questions */
+	mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* total queries, not conn questions */
 	MYSQL_RES *result_queries = mysql_store_result(pConn);
 	MYSQL_ROW row_queries = mysql_fetch_row(result_queries);
 	iOldQueries = atoi(row_queries[1]);
@@ -240,6 +240,16 @@ int main(int iArgCount, char* aArgV[])
 		printw(" sort merge passes: %s\n\n", row_smp[1]);
 		mysql_free_result(result_smp);
 
+		if (strcmp(pUser, pRoot) == 0) /* root block for no user access to perf schema */
+		{
+			/* performance_schema.setup_consumers.events_transactions_current needs to be enabled */
+			mysql_query(pConn, "SELECT COUNT(*) FROM performance_schema.events_transactions_current WHERE state = 'ACTIVE' AND timer_wait > 1000000000000 * 1");
+			MYSQL_RES *result_acttr = mysql_store_result(pConn);
+			MYSQL_ROW row_acttr = mysql_fetch_row(result_acttr);
+			printw(" active trx: %s\n", row_acttr[0]);
+			mysql_free_result(result_acttr);
+		}
+
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_current_waits'");
 		MYSQL_RES *result_irlcw = mysql_store_result(pConn);
 		MYSQL_ROW row_irlcw = mysql_fetch_row(result_irlcw);
@@ -275,11 +285,11 @@ int main(int iArgCount, char* aArgV[])
 			mysql_query(pConn, "SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'lock_timeouts';");
 			MYSQL_RES *result_lto = mysql_store_result(pConn);
 			MYSQL_ROW row_lto = mysql_fetch_row(result_lto);
-			printw(" lock timouts: %s\n", row_lto[0]);
+			printw(" lock timeouts: %s\n", row_lto[0]);
 			mysql_free_result(result_lto);
 		}
 
-		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* total queries not conn questions */
+		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* total queries, not conn questions */
 		MYSQL_RES *result_queries2 = mysql_store_result(pConn);
 		MYSQL_ROW row_queries2 = mysql_fetch_row(result_queries2);
 		iQueries = atoi(row_queries2[1]);
@@ -313,14 +323,17 @@ int main(int iArgCount, char* aArgV[])
 		printw(" rows deleted: %s\n\n", row_ird[1]);
 		mysql_free_result(result_ird);
 
-		if (strcmp(pUser, pRoot) == 0 && iMaria == 0) /* root block for no user access to perf schema */
+		if (strcmp(pUser, pRoot) == 0) /* root block for no user access to perf schema */
 		{
 			mysql_query(pConn, "SELECT ROUND(100 * (SELECT Variable_value FROM performance_schema.global_status WHERE Variable_name = 'Innodb_buffer_pool_pages_data') / (SELECT Variable_value FROM performance_schema.global_status WHERE Variable_name = 'Innodb_buffer_pool_pages_total'), 2)");
 			MYSQL_RES *result_bpf = mysql_store_result(pConn);
 			MYSQL_ROW row_bpf = mysql_fetch_row(result_bpf);
 			printw(" BP pct fill: %s%\n", row_bpf[0]);
 			mysql_free_result(result_bpf);
+		}
 
+		if (strcmp(pUser, pRoot) == 0 && iMaria == 0) /* root block for no user access to sys schema */
+		{
 			mysql_query(pConn, "SELECT ROUND(100 - (100 * (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_pages_read') / (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_buffer_pool_read_requests')), 2)");
 			MYSQL_RES *result_bphr = mysql_store_result(pConn);
 			MYSQL_ROW row_bphr = mysql_fetch_row(result_bphr);
