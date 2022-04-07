@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.09
+	* @version       0.10
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.09"
+#define MB_VERSION "0.10"
 
 
 void menu(char* const pFName);
@@ -242,12 +242,20 @@ int main(int iArgCount, char* aArgV[])
 
 		if (strcmp(pUser, pRoot) == 0) /* root block for no user access to perf schema */
 		{
-			/* performance_schema.setup_consumers.events_transactions_current needs to be enabled */
+			/* TRX at MySQL layer */
 			mysql_query(pConn, "SELECT COUNT(*) FROM performance_schema.events_transactions_current WHERE state = 'ACTIVE' AND timer_wait > 1000000000000 * 1");
-			MYSQL_RES *result_acttr = mysql_store_result(pConn);
-			MYSQL_ROW row_acttr = mysql_fetch_row(result_acttr);
-			printw(" active trx: %s\n", row_acttr[0]);
-			mysql_free_result(result_acttr);
+			MYSQL_RES *result_trx1 = mysql_store_result(pConn);
+			MYSQL_ROW row_trx1 = mysql_fetch_row(result_trx1);
+			printw(" active trx (mysql): %s\n", row_trx1[0]);
+			mysql_free_result(result_trx1);
+
+			/* TRX at InnoDB layer
+				(requires performance_schema setup_consumers.events_transactions_current and setup_instruments.transaction to be enabled) */
+			mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX"); /* includes all trx_state: RUNNING, LOCK WAIT, ROLLING BACK, COMMITTING */
+			MYSQL_RES *result_trx2 = mysql_store_result(pConn);
+			MYSQL_ROW row_trx2 = mysql_fetch_row(result_trx2);
+			printw(" active trx (innodb): %s\n", row_trx2[0]);
+			mysql_free_result(result_trx2);
 		}
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_current_waits'");
