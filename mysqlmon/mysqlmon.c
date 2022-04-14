@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.11
+	* @version       0.12
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.11"
+#define MB_VERSION "0.12"
 
 
 void menu(char* const pFName);
@@ -240,7 +240,7 @@ int main(int iArgCount, char* aArgV[])
 		printw(" sort merge passes: %s\n\n", row_smp[1]);
 		mysql_free_result(result_smp);
 
-		if (strcmp(pUser, pRoot) == 0 && iMaria == 0) /* root block for no user access to perf/sys schema */
+		if (strcmp(pUser, pRoot) == 0) /* root block for no user privileges to perf / info schemas */
 		{
 			/* TRX at MySQL layer */
 			mysql_query(pConn, "SELECT COUNT(*) FROM performance_schema.events_transactions_current WHERE state = 'ACTIVE' AND timer_wait > 1000000000000 * 1");
@@ -258,10 +258,14 @@ int main(int iArgCount, char* aArgV[])
 			mysql_free_result(result_trx2);
 
 			/* History List Length */
-			mysql_query(pConn, "SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'trx_rseg_history_len'");
+			mysql_query(pConn, "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE name = 'trx_rseg_history_len'");
 			MYSQL_RES *result_hll = mysql_store_result(pConn);
 			MYSQL_ROW row_hll = mysql_fetch_row(result_hll);
+			attron(COLOR_PAIR(1));
+			attron(A_BOLD);
 			printw(" history list length: %s\n\n", row_hll[0]);
+			attroff(A_BOLD);
+			attroff(COLOR_PAIR(1));
 			mysql_free_result(result_hll);
 		}
 
@@ -295,7 +299,7 @@ int main(int iArgCount, char* aArgV[])
 		printw(" row lock waits: %s\n", row_irlw[1]);
 		mysql_free_result(result_irlw);
 
-		if (strcmp(pUser, pRoot) == 0 && iMaria == 0) /* root block for no user access to sys schema */
+		if (strcmp(pUser, pRoot) == 0 && iMaria == 0) /* root block for no user privileges to sys schema */
 		{
 			mysql_query(pConn, "SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'lock_timeouts';");
 			MYSQL_RES *result_lto = mysql_store_result(pConn);
@@ -303,16 +307,6 @@ int main(int iArgCount, char* aArgV[])
 			printw(" lock timeouts: %s\n", row_lto[0]);
 			mysql_free_result(result_lto);
 		}
-
-		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* total queries, not conn questions */
-		MYSQL_RES *result_queries2 = mysql_store_result(pConn);
-		MYSQL_ROW row_queries2 = mysql_fetch_row(result_queries2);
-		iQueries = atoi(row_queries2[1]);
-		/* experimental; in tests close to Innotop's QPS */
-		signed int iDiff = iQueries - iOldQueries;
-		iOldQueries = iQueries;
-		printw("\n QPS: %u\n", iDiff);
-		mysql_free_result(result_queries2);
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_rows_read'");
 		MYSQL_RES *result_irr = mysql_store_result(pConn);
@@ -338,7 +332,21 @@ int main(int iArgCount, char* aArgV[])
 		printw(" rows deleted: %s\n\n", row_ird[1]);
 		mysql_free_result(result_ird);
 
-		if (strcmp(pUser, pRoot) == 0) /* root block for no user access to perf schema */
+		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* total queries, not conn questions */
+		MYSQL_RES *result_queries2 = mysql_store_result(pConn);
+		MYSQL_ROW row_queries2 = mysql_fetch_row(result_queries2);
+		iQueries = atoi(row_queries2[1]);
+		/* in tests close to Innotop's QPS */
+		signed int iDiff = iQueries - iOldQueries;
+		iOldQueries = iQueries;
+		attron(COLOR_PAIR(1));
+		attron(A_BOLD);
+		printw(" QPS: %u\n\n", iDiff);
+		attroff(A_BOLD);
+		attroff(COLOR_PAIR(1));
+		mysql_free_result(result_queries2);
+
+		if (strcmp(pUser, pRoot) == 0) /* root block for no user privileges to perf schema */
 		{
 			mysql_query(pConn, "SELECT ROUND(100 * (SELECT Variable_value FROM performance_schema.global_status WHERE Variable_name = 'Innodb_buffer_pool_pages_data') / (SELECT Variable_value FROM performance_schema.global_status WHERE Variable_name = 'Innodb_buffer_pool_pages_total'), 2)");
 			MYSQL_RES *result_bpf = mysql_store_result(pConn);
@@ -347,7 +355,7 @@ int main(int iArgCount, char* aArgV[])
 			mysql_free_result(result_bpf);
 		}
 
-		if (strcmp(pUser, pRoot) == 0 && iMaria == 0) /* root block for no user access to sys schema */
+		if (strcmp(pUser, pRoot) == 0 && iMaria == 0) /* root block for no user privileges to sys schema */
 		{
 			mysql_query(pConn, "SELECT ROUND(100 - (100 * (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_pages_read') / (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_buffer_pool_read_requests')), 2)");
 			MYSQL_RES *result_bphr = mysql_store_result(pConn);
