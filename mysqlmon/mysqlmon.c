@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.10
+	* @version       0.11
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.10"
+#define MB_VERSION "0.11"
 
 
 void menu(char* const pFName);
@@ -240,22 +240,29 @@ int main(int iArgCount, char* aArgV[])
 		printw(" sort merge passes: %s\n\n", row_smp[1]);
 		mysql_free_result(result_smp);
 
-		if (strcmp(pUser, pRoot) == 0) /* root block for no user access to perf schema */
+		if (strcmp(pUser, pRoot) == 0 && iMaria == 0) /* root block for no user access to perf/sys schema */
 		{
 			/* TRX at MySQL layer */
 			mysql_query(pConn, "SELECT COUNT(*) FROM performance_schema.events_transactions_current WHERE state = 'ACTIVE' AND timer_wait > 1000000000000 * 1");
+				/* requires performance_schema setup_consumers.events_transactions_current and setup_instruments.transaction to be enabled */
 			MYSQL_RES *result_trx1 = mysql_store_result(pConn);
 			MYSQL_ROW row_trx1 = mysql_fetch_row(result_trx1);
 			printw(" active trx (mysql): %s\n", row_trx1[0]);
 			mysql_free_result(result_trx1);
 
-			/* TRX at InnoDB layer
-				(requires performance_schema setup_consumers.events_transactions_current and setup_instruments.transaction to be enabled) */
+			/* TRX at InnoDB layer */
 			mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX"); /* includes all trx_state: RUNNING, LOCK WAIT, ROLLING BACK, COMMITTING */
 			MYSQL_RES *result_trx2 = mysql_store_result(pConn);
 			MYSQL_ROW row_trx2 = mysql_fetch_row(result_trx2);
 			printw(" active trx (innodb): %s\n", row_trx2[0]);
 			mysql_free_result(result_trx2);
+
+			/* History List Length */
+			mysql_query(pConn, "SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'trx_rseg_history_len'");
+			MYSQL_RES *result_hll = mysql_store_result(pConn);
+			MYSQL_ROW row_hll = mysql_fetch_row(result_hll);
+			printw(" history list length: %s\n\n", row_hll[0]);
+			mysql_free_result(result_hll);
 		}
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_current_waits'");
