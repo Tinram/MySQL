@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.12
+	* @version       0.13
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.12"
+#define MB_VERSION "0.13"
 
 
 void menu(char* const pFName);
@@ -299,13 +299,19 @@ int main(int iArgCount, char* aArgV[])
 		printw(" row lock waits: %s\n", row_irlw[1]);
 		mysql_free_result(result_irlw);
 
-		if (strcmp(pUser, pRoot) == 0 && iMaria == 0) /* root block for no user privileges to sys schema */
+		if (strcmp(pUser, pRoot) == 0) /* root block for no user privileges to info schema */
 		{
-			mysql_query(pConn, "SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'lock_timeouts';");
+			mysql_query(pConn, "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE NAME = 'lock_timeouts'");
 			MYSQL_RES *result_lto = mysql_store_result(pConn);
 			MYSQL_ROW row_lto = mysql_fetch_row(result_lto);
 			printw(" lock timeouts: %s\n", row_lto[0]);
 			mysql_free_result(result_lto);
+
+			mysql_query(pConn, "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE NAME = 'lock_deadlocks'");
+			MYSQL_RES *result_dl = mysql_store_result(pConn);
+			MYSQL_ROW row_dl = mysql_fetch_row(result_dl);
+			printw(" deadlocks: %s\n", row_dl[0]);
+			mysql_free_result(result_dl);
 		}
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_rows_read'");
