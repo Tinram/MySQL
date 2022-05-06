@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.13
+	* @version       0.14
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -22,38 +22,41 @@
 */
 
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <getopt.h>
 #include <unistd.h>
+
 #include <curses.h>
+#include <getopt.h>
 #include <mysql.h>
-#include <signal.h>
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.13"
+#define MB_VERSION "0.14"
 
 
 void menu(char* const pFName);
 unsigned int options(int iArgCount, char* aArgV[]);
-void signal_handler(int sig);
+void signal_handler(int iSig);
 
 
 char* pHost = NULL;
 char* pUser = NULL;
 char* pPassword = NULL;
 char* pProgname = NULL;
-const char* pRoot = "root";
 unsigned int iPort = 3306;
 unsigned int iSigCaught = 0;
 
 
-/*
-  * Sigint handling required to prevent quit incrementing the Aborted_clients counter.
-  * Following on from an example by Greg Kemnitz.
+/**
+	* Sigint handling based on an example by Greg Kemnitz.
+	*
+	* @param   integer iSig
+	* @return  void
 */
+
 void signal_handler(int iSig)
 {
 	if (iSig == SIGINT || iSig == SIGTERM || iSig == SIGSEGV)
@@ -65,9 +68,10 @@ void signal_handler(int iSig)
 
 int main(int iArgCount, char* aArgV[])
 {
-	unsigned int iMenu = options(iArgCount, aArgV);
 	MYSQL* pConn;
 	const char* pMaria = "MariaDB";
+	unsigned int iMenu = options(iArgCount, aArgV);
+	unsigned int iAccess = 0;
 	unsigned int iMaria = 0;
 	signed int iOldQueries = 0;
 	signed int iQueries = 0;
@@ -109,6 +113,7 @@ int main(int iArgCount, char* aArgV[])
 	{
 		endwin();
 		fprintf(stderr, "\nThis terminal does not support colours.\n\n");
+		mysql_close(pConn);
 		return EXIT_FAILURE;
 	}
 
@@ -240,16 +245,26 @@ int main(int iArgCount, char* aArgV[])
 		printw(" sort merge passes: %s\n\n", row_smp[1]);
 		mysql_free_result(result_smp);
 
-		if (strcmp(pUser, pRoot) == 0) /* root block for no user privileges to perf / info schemas */
+		/* TRX at MySQL layer */
+		mysql_query(pConn, "SELECT COUNT(*) FROM performance_schema.events_transactions_current WHERE state = 'ACTIVE' AND timer_wait > 1000000000000 * 1");
+			/* requires performance_schema setup_consumers.events_transactions_current and setup_instruments.transaction to be enabled */
+		MYSQL_RES *result_trx1 = mysql_store_result(pConn);
+
+		if (mysql_errno(pConn) == 0) /* upon access denied error, set limit for less privileged users */
 		{
-			/* TRX at MySQL layer */
-			mysql_query(pConn, "SELECT COUNT(*) FROM performance_schema.events_transactions_current WHERE state = 'ACTIVE' AND timer_wait > 1000000000000 * 1");
-				/* requires performance_schema setup_consumers.events_transactions_current and setup_instruments.transaction to be enabled */
-			MYSQL_RES *result_trx1 = mysql_store_result(pConn);
+			iAccess = 1;
+		}
+
+		if (iAccess == 1)
+		{
 			MYSQL_ROW row_trx1 = mysql_fetch_row(result_trx1);
 			printw(" active trx (mysql): %s\n", row_trx1[0]);
-			mysql_free_result(result_trx1);
+		}
 
+		mysql_free_result(result_trx1);
+
+		if (iAccess == 1)
+		{
 			/* TRX at InnoDB layer */
 			mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX"); /* includes all trx_state: RUNNING, LOCK WAIT, ROLLING BACK, COMMITTING */
 			MYSQL_RES *result_trx2 = mysql_store_result(pConn);
@@ -299,7 +314,7 @@ int main(int iArgCount, char* aArgV[])
 		printw(" row lock waits: %s\n", row_irlw[1]);
 		mysql_free_result(result_irlw);
 
-		if (strcmp(pUser, pRoot) == 0) /* root block for no user privileges to info schema */
+		if (iAccess == 1)
 		{
 			mysql_query(pConn, "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE NAME = 'lock_timeouts'");
 			MYSQL_RES *result_lto = mysql_store_result(pConn);
@@ -352,7 +367,7 @@ int main(int iArgCount, char* aArgV[])
 		attroff(COLOR_PAIR(1));
 		mysql_free_result(result_queries2);
 
-		if (strcmp(pUser, pRoot) == 0) /* root block for no user privileges to perf schema */
+		if (iAccess == 1)
 		{
 			mysql_query(pConn, "SELECT ROUND(100 * (SELECT Variable_value FROM performance_schema.global_status WHERE Variable_name = 'Innodb_buffer_pool_pages_data') / (SELECT Variable_value FROM performance_schema.global_status WHERE Variable_name = 'Innodb_buffer_pool_pages_total'), 2)");
 			MYSQL_RES *result_bpf = mysql_store_result(pConn);
@@ -361,7 +376,7 @@ int main(int iArgCount, char* aArgV[])
 			mysql_free_result(result_bpf);
 		}
 
-		if (strcmp(pUser, pRoot) == 0 && iMaria == 0) /* root block for no user privileges to sys schema */
+		if (iAccess == 1 && iMaria == 0) /* block sys to MariaDB */
 		{
 			mysql_query(pConn, "SELECT ROUND(100 - (100 * (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_pages_read') / (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_buffer_pool_read_requests')), 2)");
 			MYSQL_RES *result_bphr = mysql_store_result(pConn);
