@@ -18,4 +18,4 @@ install:
 	@echo "Attempted to copy $(NAME) to /usr/local/bin"
 
 deps:
-	sudo apt install libmysqlclient-dev
+	sudo apt install libmysqlclient-dev libncurses5-dev
