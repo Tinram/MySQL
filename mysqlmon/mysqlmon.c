@@ -7,13 +7,13 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.14
+	* @version       0.15
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
 	* Compile:
 	* (Linux GCC x64)
-	*                required dependency: libmysqlclient-dev
+	*                required dependencies: libmysqlclient-dev, libncurses5-dev
 	*                gcc mysqlmon.c $(mysql_config --cflags) $(mysql_config --libs) -o mysqlmon -lncurses -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -std=gnu99 -s
 	*
 	* Usage:
@@ -34,7 +34,7 @@
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.14"
+#define MB_VERSION "0.15"
 
 
 void menu(char* const pFName);
@@ -80,7 +80,7 @@ int main(int iArgCount, char* aArgV[])
 
 	if (signal(SIGINT, signal_handler) == SIG_ERR)
 	{
-		fprintf(stderr, "Signal fn registration failed!\n");
+		fprintf(stderr, "Signal function registration failed!\n");
 		return EXIT_FAILURE;
 	}
 
