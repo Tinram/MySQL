@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.15
+	* @version       0.16
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -34,7 +34,7 @@
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.15"
+#define MB_VERSION "0.16"
 
 
 void menu(char* const pFName);
@@ -293,19 +293,22 @@ int main(int iArgCount, char* aArgV[])
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_time'");
 		MYSQL_RES *result_irlt = mysql_store_result(pConn);
 		MYSQL_ROW row_irlt = mysql_fetch_row(result_irlt);
-		printw(" row lock time: %s\n", row_irlt[1]);
+		signed int irlt = ((atoi(row_irlt[1])) / 1000);
+		printw(" row lock time: %ds\n", irlt);
 		mysql_free_result(result_irlt);
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_time_avg'");
 		MYSQL_RES *result_irlta = mysql_store_result(pConn);
 		MYSQL_ROW row_irlta = mysql_fetch_row(result_irlta);
-		printw(" row lock time avg: %s\n", row_irlta[1]);
+		float irlta = ((atoi(row_irlta[1])) / 1000);
+		printw(" row lock time avg: %2.1fs\n", irlta);
 		mysql_free_result(result_irlta);
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_time_max'");
 		MYSQL_RES *result_irltm = mysql_store_result(pConn);
 		MYSQL_ROW row_irltm = mysql_fetch_row(result_irltm);
-		printw(" row lock time max: %s\n", row_irltm[1]);
+		signed int irltm = ((atoi(row_irltm[1])) / 1000);
+		printw(" row lock time max: %ds\n", irltm);
 		mysql_free_result(result_irltm);
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_waits'");
@@ -376,7 +379,7 @@ int main(int iArgCount, char* aArgV[])
 			mysql_free_result(result_bpf);
 		}
 
-		if (iAccess == 1 && iMaria == 0) /* block sys to MariaDB */
+		if (iAccess == 1 && iMaria == 0) /* block sys access to MariaDB */
 		{
 			mysql_query(pConn, "SELECT ROUND(100 - (100 * (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_pages_read') / (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_buffer_pool_read_requests')), 2)");
 			MYSQL_RES *result_bphr = mysql_store_result(pConn);
