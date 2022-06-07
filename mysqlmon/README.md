@@ -1,7 +1,7 @@
 
 # mysqlmon
 
-#### *mysqld* counters monitor.
+#### MySQL instance counters monitor.
 
 
 [1]: https://tinram.github.io/images/mysqlmon.png
@@ -11,7 +11,9 @@
 
 ## Purpose
 
-Created to continously monitor *mysqld* counters during Sysbench load testing.
+Originally created to continuously monitor MySQL counters during *Sysbench* load testing.
+
+Now it's my preferred tool to monitor active transaction and *History List Length* counters on Aurora instances.
 
 
 ## OS Support
@@ -35,6 +37,9 @@ Created to continously monitor *mysqld* counters during Sysbench load testing.
 ```
 
 If the host switch `-h` is omitted, *mysqlmon* attempts to connect to a localhost instance of *mysqld*.
+
+For Aurora connections, make sure the host is a read-write endpoint to provide full stats (not a read-only).
+
 
 <kbd>Ctrl</kbd> + <kbd>C</kbd> to exit.
 
