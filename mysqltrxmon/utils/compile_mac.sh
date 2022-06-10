@@ -1,0 +1,3 @@
+#!/bin/zsh
+
+clang mysqltrxmon.c -o mysqltrxmon -lncurses -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -Wformat=2 -Wunused-parameter -Wshadow -Wstrict-prototypes -Wold-style-definition -Wredundant-decls -Wnested-externs -Wmissing-include-dirs -Wformat-security -std=gnu99 -flto -I/opt/homebrew/opt/mysql-client/include/mysql -L/opt/homebrew/opt/mysql-client/lib -lmysqlclient -lz -L/opt/homebrew/opt/zstd -lssl -lcrypto -lresolv
