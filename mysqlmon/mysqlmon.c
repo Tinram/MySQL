@@ -7,13 +7,13 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.17
+	* @version       0.18
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
 	* Compile:
 	* (Linux GCC x64)
-	*                required dependencies: libmysqlclient-dev, libncurses5-dev
+	*                Required dependencies: libmysqlclient-dev, libncurses5-dev
 	*                gcc mysqlmon.c $(mysql_config --cflags) $(mysql_config --libs) -o mysqlmon -lncurses -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -std=gnu99 -s
 	*
 	* Usage:
@@ -34,7 +34,7 @@
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.17"
+#define MB_VERSION "0.18"
 
 
 void menu(char* const pFName);
@@ -134,20 +134,20 @@ int main(int iArgCount, char* aArgV[])
 	mysql_free_result(result_queries);
 
 	start_color();
-	init_pair(1, COLOR_GREEN, 0);
+	init_color(COLOR_BLACK, 0, 0, 0); // for Gnome
+	init_pair(1, COLOR_GREEN, COLOR_BLACK);
 	curs_set(0);
 
 	while ( ! iSigCaught)
 	{
 		clear();
 
-		printw("\n");
 		mysql_query(pConn, "SHOW variables WHERE Variable_name = 'hostname'");
 		MYSQL_RES* result_hn = mysql_store_result(pConn);
 		MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
-		attron(A_BOLD);
-		printw(" %s\n", row_hn[1]);
-		attroff(A_BOLD);
+		attrset(A_BOLD);
+		printw("\n %s\n", row_hn[1]);
+		attrset(A_NORMAL);
 		if (iMaria == 1)
 		{
 			printw(" %s\n", pMaria);
@@ -158,11 +158,9 @@ int main(int iArgCount, char* aArgV[])
 		mysql_query(pConn, "SHOW STATUS WHERE Variable_name = 'Threads_connected'");
 		MYSQL_RES* result_tc = mysql_store_result(pConn);
 		MYSQL_ROW row_tc = mysql_fetch_row(result_tc);
-		attron(COLOR_PAIR(1));
-		attron(A_BOLD);
+		attrset(A_BOLD | COLOR_PAIR(1));
 		printw(" threads connected: %s\n", row_tc[1]);
-		attroff(A_BOLD);
-		attroff(COLOR_PAIR(1));
+		attrset(A_NORMAL);
 		mysql_free_result(result_tc);
 
 		mysql_query(pConn, "SHOW STATUS WHERE Variable_name = 'Aborted_connects'");
@@ -180,11 +178,9 @@ int main(int iArgCount, char* aArgV[])
 		mysql_query(pConn, "SHOW STATUS WHERE Variable_name = 'Max_used_connections'");
 		MYSQL_RES* result_muc = mysql_store_result(pConn);
 		MYSQL_ROW row_muc = mysql_fetch_row(result_muc);
-		attron(COLOR_PAIR(1));
-		attron(A_BOLD);
+		attrset(A_BOLD | COLOR_PAIR(1));
 		printw(" max used connections: %s\n", row_muc[1]);
-		attroff(A_BOLD);
-		attroff(COLOR_PAIR(1));
+		attrset(A_NORMAL);
 		mysql_free_result(result_muc);
 
 		mysql_query(pConn, "SHOW GLOBAL VARIABLES WHERE Variable_name = 'max_connections'");
@@ -202,11 +198,9 @@ int main(int iArgCount, char* aArgV[])
 		mysql_query(pConn, "SHOW STATUS WHERE Variable_name = 'Threads_running'");
 		MYSQL_RES* result_tr = mysql_store_result(pConn);
 		MYSQL_ROW row_tr = mysql_fetch_row(result_tr);
-		attron(COLOR_PAIR(1));
-		attron(A_BOLD);
+		attrset(A_BOLD | COLOR_PAIR(1));
 		printw(" threads running: %s\n", row_tr[1]);
-		attroff(A_BOLD);
-		attroff(COLOR_PAIR(1));
+		attrset(A_NORMAL);
 		mysql_free_result(result_tr);
 
 		mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'thread_cache_size'");
@@ -276,11 +270,9 @@ int main(int iArgCount, char* aArgV[])
 			mysql_query(pConn, "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE name = 'trx_rseg_history_len'");
 			MYSQL_RES* result_hll = mysql_store_result(pConn);
 			MYSQL_ROW row_hll = mysql_fetch_row(result_hll);
-			attron(COLOR_PAIR(1));
-			attron(A_BOLD);
+			attrset(A_BOLD | COLOR_PAIR(1));
 			printw(" history list length: %s\n\n", row_hll[0]);
-			attroff(A_BOLD);
-			attroff(COLOR_PAIR(1));
+			attrset(A_NORMAL);
 			mysql_free_result(result_hll);
 		}
 
@@ -363,11 +355,9 @@ int main(int iArgCount, char* aArgV[])
 		/* in tests close to Innotop's QPS */
 		signed int iDiff = iQueries - iOldQueries;
 		iOldQueries = iQueries;
-		attron(COLOR_PAIR(1));
-		attron(A_BOLD);
+		attrset(A_BOLD | COLOR_PAIR(1));
 		printw(" QPS: %u\n\n", iDiff);
-		attroff(A_BOLD);
-		attroff(COLOR_PAIR(1));
+		attrset(A_NORMAL);
 		mysql_free_result(result_queries2);
 
 		if (iAccess == 1)
