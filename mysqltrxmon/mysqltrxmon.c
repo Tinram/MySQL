@@ -5,13 +5,13 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.12
+	* @version       0.13
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
 	* Compile:
 	* (Linux GCC x64)
-	*                required dependencies: libmysqlclient-dev, libncurses5-dev
+	*                Required dependencies: libmysqlclient-dev, libncurses5-dev
 	*                gcc mysqltrxmon.c $(mysql_config --cflags) $(mysql_config --libs) -o mysqltrxmon -lncurses -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -std=gnu99 -s
 	*
 	* Usage:
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "mysqltrxmon"
-#define MB_VERSION "0.12"
+#define MB_VERSION "0.13"
 
 
 void menu(char* const pFName);
@@ -49,7 +49,7 @@ char* pLogfile = NULL;
 char* pProgname = NULL;
 const char* pRoot = "root";
 unsigned int iPort = 3306;
-unsigned int iTime = 250; // ms
+unsigned int iTime = 250; // millisecs
 unsigned int iSigCaught = 0;
 
 
@@ -147,6 +147,7 @@ int main(int iArgCount, char* aArgV[])
 	mysql_free_result(result_ps);
 
 	start_color();
+	init_color(COLOR_BLACK, 0, 0, 0); // for Gnome
 	init_pair(1, COLOR_GREEN, COLOR_BLACK);
 	init_pair(2, COLOR_MAGENTA, COLOR_BLACK);
 	init_pair(3, COLOR_CYAN, COLOR_BLACK);
@@ -157,12 +158,11 @@ int main(int iArgCount, char* aArgV[])
 	{
 		clear();
 
-		printw("\n");
 		mysql_query(pConn, "SHOW variables WHERE Variable_name = 'hostname'");
 		MYSQL_RES* result_hn = mysql_store_result(pConn);
 		MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
 		attron(A_BOLD);
-		printw(" %s\n\n", row_hn[1]);
+		printw("\n %s\n\n", row_hn[1]);
 		attroff(A_BOLD);
 		mysql_free_result(result_hn);
 
@@ -192,11 +192,9 @@ int main(int iArgCount, char* aArgV[])
 
 		if (iPS == 0)
 		{
-			attron(A_BOLD);
-			attron(COLOR_PAIR(4));
+			attrset(A_BOLD | COLOR_PAIR(4));
 			printw(" performance schema disabled\n");
-			attroff(COLOR_PAIR(4));
-			attroff(A_BOLD);
+			attrset(A_NORMAL);
 		}
 
 		if (iAccess == 1)
@@ -270,11 +268,9 @@ int main(int iArgCount, char* aArgV[])
 		}
 		else
 		{
-			attron(A_BOLD);
-			attron(COLOR_PAIR(4));
+			attrset(A_BOLD | COLOR_PAIR(4));
 			printw(" no user privilege access\n");
-			attroff(COLOR_PAIR(4));
-			attroff(A_BOLD);
+			attrset(A_NORMAL);
 		}
 
 		refresh();
