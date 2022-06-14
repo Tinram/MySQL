@@ -8,14 +8,14 @@
 
 ## Purpose
 
-Monitor and log transactions on a MySQL server.
+Monitor and log long-running transactions on a MySQL server.
 
 
 ## Requirements
 
 + Linux or Mac machine.
 + User privileges granted to access the *performance_schema* of the server.
-+ For Aurora instances, make sure the host is a read-write endpoint to provide full stats (not a read-only).
++ For Aurora instances, ensure the host is a read-write endpoint to provide full stats (not a read-only).
 
 
 ## Usage
@@ -56,7 +56,7 @@ Visual monitor with the refresh period reduced to 100 milliseconds:
 ## CSV Output
 
 The CSV emitted is a PSV (pipe-separated value) file.  
-Pipe separators are enforced by the logged SQL statements containing commas.
+(Pipe separators are enforced by the logged SQL statements containing commas.)
 
 An example Python script is in *utils/* to extract and plot values from the PSV.
 
@@ -72,12 +72,13 @@ An example Python script is in *utils/* to extract and plot values from the PSV.
 
 ```bash
     make deps  # (if *mysqlclient* and *ncurses* libraries not already installed)
+
     make
 ```
 
 ### MacOS
 
-Mac is a little trickier, with additional libraries required such as *zstd*.  The Linux *makefile* can be run, substituting *gcc* with *clang*, and then the required *Homebrew* required dependencies fixed (installed) from the error output. Included in *utils/* is an example shell script, the result of this reversal process on an M1 Mac.
+Mac is a little trickier, with additional libraries required such as *zstd*. The Linux *makefile* can be run, substituting *gcc* with *clang*, and then the *Homebrew* dependencies fixed (installed) from the error output. Included in *utils/* is an example shell script, the result of  reversal process on an M1 Mac.
 
 
 ## License
