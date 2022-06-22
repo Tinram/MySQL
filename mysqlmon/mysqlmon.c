@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.18
+	* @version       0.19
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -34,7 +34,7 @@
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.18"
+#define MB_VERSION "0.19"
 
 
 void menu(char* const pFName);
@@ -73,8 +73,8 @@ int main(int iArgCount, char* aArgV[])
 	unsigned int iMenu = options(iArgCount, aArgV);
 	unsigned int iAccess = 0;
 	unsigned int iMaria = 0;
-	signed int iOldQueries = 0;
-	signed int iQueries = 0;
+	unsigned int iOldQueries = 0;
+	unsigned int iQueries = 0;
 
 	pProgname = aArgV[0];
 
@@ -118,7 +118,7 @@ int main(int iArgCount, char* aArgV[])
 	}
 
 	/* Identify MariaDB which does not natively possess sys schema. */
-	mysql_query(pConn, "SHOW variables WHERE Variable_name = 'version'");
+	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'version'");
 	MYSQL_RES* result_ver = mysql_store_result(pConn);
 	MYSQL_ROW row_ver = mysql_fetch_row(result_ver);
 	if (strstr(row_ver[1], pMaria) != NULL)
@@ -130,7 +130,7 @@ int main(int iArgCount, char* aArgV[])
 	mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* total queries, not conn questions */
 	MYSQL_RES* result_queries = mysql_store_result(pConn);
 	MYSQL_ROW row_queries = mysql_fetch_row(result_queries);
-	iOldQueries = atoi(row_queries[1]);
+	iOldQueries = (unsigned int) atoi(row_queries[1]);
 	mysql_free_result(result_queries);
 
 	start_color();
@@ -142,7 +142,7 @@ int main(int iArgCount, char* aArgV[])
 	{
 		clear();
 
-		mysql_query(pConn, "SHOW variables WHERE Variable_name = 'hostname'");
+		mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'hostname'");
 		MYSQL_RES* result_hn = mysql_store_result(pConn);
 		MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
 		attrset(A_BOLD);
@@ -285,8 +285,8 @@ int main(int iArgCount, char* aArgV[])
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_time'");
 		MYSQL_RES* result_irlt = mysql_store_result(pConn);
 		MYSQL_ROW row_irlt = mysql_fetch_row(result_irlt);
-		signed int irlt = ((atoi(row_irlt[1])) / 1000);
-		printw(" row lock time: %ds\n", irlt);
+		unsigned int irlt = (((unsigned int) atoi(row_irlt[1])) / 1000);
+		printw(" row lock time: %us\n", irlt);
 		mysql_free_result(result_irlt);
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_time_avg'");
@@ -299,8 +299,8 @@ int main(int iArgCount, char* aArgV[])
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_time_max'");
 		MYSQL_RES* result_irltm = mysql_store_result(pConn);
 		MYSQL_ROW row_irltm = mysql_fetch_row(result_irltm);
-		signed int irltm = ((atoi(row_irltm[1])) / 1000);
-		printw(" row lock time max: %ds\n", irltm);
+		unsigned int irltm = (((unsigned int) atoi(row_irltm[1])) / 1000);
+		printw(" row lock time max: %us\n", irltm);
 		mysql_free_result(result_irltm);
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_waits'");
@@ -351,14 +351,21 @@ int main(int iArgCount, char* aArgV[])
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* total queries, not conn questions */
 		MYSQL_RES* result_queries2 = mysql_store_result(pConn);
 		MYSQL_ROW row_queries2 = mysql_fetch_row(result_queries2);
-		iQueries = atoi(row_queries2[1]);
+		iQueries = (unsigned int) atoi(row_queries2[1]);
 		/* in tests close to Innotop's QPS */
-		signed int iDiff = iQueries - iOldQueries;
+		unsigned int iDiff = iQueries - iOldQueries;
 		iOldQueries = iQueries;
 		attrset(A_BOLD | COLOR_PAIR(1));
 		printw(" QPS: %u\n\n", iDiff);
 		attrset(A_NORMAL);
 		mysql_free_result(result_queries2);
+
+		mysql_query(pConn, "SHOW GLOBAL VARIABLES WHERE Variable_name = 'innodb_buffer_pool_size'");
+		MYSQL_RES* result_bps = mysql_store_result(pConn);
+		MYSQL_ROW row_bps = mysql_fetch_row(result_bps);
+		unsigned int bpsmb = (((unsigned int) atoi(row_bps[1])) / 1024 / 1024);
+		printw(" BP: %uMB\n", bpsmb);
+		mysql_free_result(result_bps);
 
 		if (iAccess == 1)
 		{
