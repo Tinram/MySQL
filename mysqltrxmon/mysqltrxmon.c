@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.13
+	* @version       0.14
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "mysqltrxmon"
-#define MB_VERSION "0.13"
+#define MB_VERSION "0.14"
 
 
 void menu(char* const pFName);
@@ -77,6 +77,7 @@ int main(int iArgCount, char* aArgV[])
 	unsigned int iMenu = options(iArgCount, aArgV);
 	unsigned int iPS = 0;
 	unsigned int iAccess = 0;
+	int iRow = 0;
 	pProgname = aArgV[0];
 
 	if (signal(SIGINT, signal_handler) == SIG_ERR)
@@ -131,13 +132,13 @@ int main(int iArgCount, char* aArgV[])
 		}
 		else
 		{
-			fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", "thd", "ps", "exm", "lock", "mod", "afft", "tmpd", "noidx", "wait", "start", "user", "trxop", "query");
+			fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", "thd", "ps", "exm", "lock", "mod", "afft", "tmpd", "noidx", "wait", "start", "user", "trxstate", "trxopstate", "query");
 			fclose(fp);
 		}
 	}
 
 	/* Check performance schema availability. */
-	mysql_query(pConn, "SHOW variables WHERE Variable_name = 'performance_schema'");
+	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'performance_schema'");
 	MYSQL_RES* result_ps = mysql_store_result(pConn);
 	MYSQL_ROW row_ps = mysql_fetch_row(result_ps);
 	if (strstr(row_ps[1], "ON") != NULL)
@@ -152,17 +153,19 @@ int main(int iArgCount, char* aArgV[])
 	init_pair(2, COLOR_MAGENTA, COLOR_BLACK);
 	init_pair(3, COLOR_CYAN, COLOR_BLACK);
 	init_pair(4, COLOR_RED, COLOR_BLACK);
+	init_pair(5, COLOR_BLUE, COLOR_BLACK);
 	curs_set(0);
 
 	while ( ! iSigCaught)
 	{
 		clear();
+		iRow = 1;
 
-		mysql_query(pConn, "SHOW variables WHERE Variable_name = 'hostname'");
+		mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'hostname'");
 		MYSQL_RES* result_hn = mysql_store_result(pConn);
 		MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
 		attron(A_BOLD);
-		printw("\n %s\n\n", row_hn[1]);
+		mvprintw(iRow, 1, row_hn[1]);
 		attroff(A_BOLD);
 		mysql_free_result(result_hn);
 
@@ -180,31 +183,32 @@ int main(int iArgCount, char* aArgV[])
 		if (iAccess == 1)
 		{
 			MYSQL_ROW row_acttr = mysql_fetch_row(result_acttr);
-			printw(" trx: %s\n", row_acttr[0]);
+			attrset(A_BOLD | COLOR_PAIR(4));
+			mvprintw(iRow += 2, 1, "trx: %s", row_acttr[0]);
 
 			/* History List Length */
 			mysql_query(pConn, "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE NAME = 'trx_rseg_history_len'");
 			MYSQL_RES* result_hll = mysql_store_result(pConn);
 			MYSQL_ROW row_hll = mysql_fetch_row(result_hll);
-			printw(" hll: %s\n\n", row_hll[0]);
+			mvprintw(iRow += 1, 1, "hll: %s", row_hll[0]);
+			attrset(A_NORMAL);
 			mysql_free_result(result_hll);
 		}
 
 		if (iPS == 0)
 		{
 			attrset(A_BOLD | COLOR_PAIR(4));
-			printw(" performance schema disabled\n");
+			mvprintw(iRow += 2, 1, "performance schema disabled");
 			attrset(A_NORMAL);
 		}
 
 		if (iAccess == 1)
 		{
 			mysql_query(pConn, "\
-				SELECT thd.THREAD_ID, thd.PROCESSLIST_ID, stmt.ROWS_EXAMINED, trx.trx_rows_locked, trx.trx_rows_modified, stmt.ROWS_AFFECTED, stmt.CREATED_TMP_DISK_TABLES, stmt.NO_INDEX_USED, ROUND(stmt.TIMER_WAIT/1000000000000, 4), trx.trx_started, thd.PROCESSLIST_USER, trx.trx_operation_state, stmt.SQL_TEXT \
+				SELECT thd.THREAD_ID, thd.PROCESSLIST_ID, stmt.ROWS_EXAMINED, trx.trx_rows_locked, trx.trx_rows_modified, stmt.ROWS_AFFECTED, stmt.CREATED_TMP_DISK_TABLES, stmt.NO_INDEX_USED, ROUND(stmt.TIMER_WAIT/1000000000000, 4), trx.trx_started, thd.PROCESSLIST_USER, trx.trx_state, trx.trx_operation_state, stmt.SQL_TEXT \
 				FROM information_schema.INNODB_TRX trx \
 					INNER JOIN performance_schema.threads thd ON thd.PROCESSLIST_ID = trx.trx_mysql_thread_id \
 					INNER JOIN performance_schema.events_statements_current stmt USING (THREAD_ID) \
-				WHERE trx.trx_state = 'RUNNING' \
 			");
 
 			MYSQL_RES* result_trx = mysql_store_result(pConn);
@@ -222,31 +226,62 @@ int main(int iArgCount, char* aArgV[])
 				}
 			}
 
+			iRow = 8;
+
 			while ((row_trx = mysql_fetch_row(result_trx)))
 			{
 				if (row_trx != NULL)
 				{
 					char idx = (strcmp("1", row_trx[7]) == 1) ? 'N' : 'Y'; // NO_INDEX_USED -> reversal
 
-					printw(" %s\t%s\t%s\t%s\t\t%s\t%s\t%s\t%s\t%s\t\t%s\t\t\t%s\n", "thd", "ps", "exm", "lock", "mod", "afft", "tmpd", "idx", "wait", "start", "user");
+					mvprintw(iRow, 1, "thd");
+					mvprintw(iRow, 8, "ps");
+					mvprintw(iRow, 16, "exm");
+					mvprintw(iRow, 28, "lock");
+					mvprintw(iRow, 42, "mod");
+					mvprintw(iRow, 52, "afft");
+					mvprintw(iRow, 62, "tmpd");
+					mvprintw(iRow, 70, "idx");
+					mvprintw(iRow, 78, "wait");
+					mvprintw(iRow, 92, "start");
+					mvprintw(iRow, 117, "user");
+
+					attron(A_BOLD);
+					attron(COLOR_PAIR(1));
+					iRow++;
+
+					mvprintw(iRow, 1, row_trx[0]);
+					mvprintw(iRow, 8, row_trx[1]);
+					mvprintw(iRow, 16, row_trx[2]);
+					mvprintw(iRow, 28, row_trx[3]);
+					mvprintw(iRow, 42, row_trx[4]);
+					mvprintw(iRow, 52, row_trx[5]);
+					mvprintw(iRow, 62, row_trx[6]);
+					mvprintw(iRow, 70, "%c", idx);
+					mvprintw(iRow, 78, row_trx[8]);
+					mvprintw(iRow, 92, row_trx[9]);
+					mvprintw(iRow, 117, row_trx[10]);
+
+					attroff(COLOR_PAIR(1));
+					attroff(A_BOLD);
+
+					attron(COLOR_PAIR(5));
+					mvprintw(iRow += 2, 1, row_trx[11]);
+					attroff(COLOR_PAIR(5));
 
 					attron(A_BOLD);
 
-					attron(COLOR_PAIR(1));
-					printw(" %s\t%s\t%s\t%s\t\t%s\t%s\t%s\t%c\t%s\t\t%s\t%s\n\n", row_trx[0], row_trx[1], row_trx[2], row_trx[3], row_trx[4], row_trx[5], row_trx[6], idx, row_trx[8], row_trx[9], row_trx[10]);
-					attroff(COLOR_PAIR(1));
-
-					if (row_trx[11] != NULL)
+					if (row_trx[12] != NULL)
 					{
 						attron(COLOR_PAIR(2));
-						printw(" %s\n\n", row_trx[11]);
+						mvprintw(iRow += 1, 1, row_trx[12]);
 						attroff(COLOR_PAIR(2));
 					}
 
-					if (row_trx[12] != NULL)
+					if (row_trx[13] != NULL)
 					{
 						attron(COLOR_PAIR(3));
-						printw(" %s\n\n\n", row_trx[12]);
+						mvprintw(iRow += 1, 1, row_trx[13]);
 						attroff(COLOR_PAIR(3));
 					}
 
@@ -254,9 +289,11 @@ int main(int iArgCount, char* aArgV[])
 
 					if (pLogfile != NULL)
 					{
-						fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%c|%s|%s|%s|%s|%s;\n", row_trx[0], row_trx[1], row_trx[2], row_trx[3], row_trx[4], row_trx[5], row_trx[6], idx, row_trx[8], row_trx[9], row_trx[10], row_trx[11], row_trx[12]);
+						fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%c|%s|%s|%s|%s|%s|%s;\n", row_trx[0], row_trx[1], row_trx[2], row_trx[3], row_trx[4], row_trx[5], row_trx[6], idx, row_trx[8], row_trx[9], row_trx[10], row_trx[11], row_trx[12], row_trx[13]);
 					}
 				}
+
+				iRow += 6;
 			}
 
 			mysql_free_result(result_trx);
@@ -269,7 +306,7 @@ int main(int iArgCount, char* aArgV[])
 		else
 		{
 			attrset(A_BOLD | COLOR_PAIR(4));
-			printw(" no user privilege access\n");
+			mvprintw(iRow += 2, 1, "no user privilege access");
 			attrset(A_NORMAL);
 		}
 
@@ -336,7 +373,7 @@ unsigned int options(int iArgCount, char* aArgV[])
 
 			case 't':
 				iTime = (unsigned int) atoi(optarg);
-				if (iTime < 50) {iTime = 50;}
+				if (iTime < 10) {iTime = 10;}
 				if (iTime > 2000) {iTime = 2000;}
 				break;
 
