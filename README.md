@@ -4,7 +4,8 @@
 
 #### Programs
 
-+ [mysqlmon](https://github.com/Tinram/MySQL/tree/master/mysqlmon) &ndash; *mysqld* counters monitor
++ [mysqlmon](https://github.com/Tinram/MySQL/tree/master/mysqlmon) &ndash; counters monitor
++ [mysqltrxmon](https://github.com/Tinram/MySQL/tree/master/mysqltrxmon) &ndash; transaction monitor
 + [mysqlping](https://github.com/Tinram/MySQL/tree/master/mysqlping) &ndash; continuous pinger
 
 
