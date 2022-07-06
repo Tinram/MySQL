@@ -15,7 +15,7 @@ Monitor and log long-running transactions on a MySQL server.
 
 + Linux or Mac machine.
 + User privileges granted to access the *performance_schema* of the server.
-+ For Aurora instances, ensure the host is a read-write endpoint to provide full stats (not a read-only).
++ For Aurora instances, host must be a read-write endpoint to provide full stats (not a read-only).
 
 
 ## Usage
@@ -71,7 +71,7 @@ An example Python script is in *utils/* to extract and plot values from the PSV.
 ### Linux
 
 ```bash
-    make deps  # (if *mysqlclient* and *ncurses* libraries not already installed)
+    make deps  # (if mysqlclient and ncurses libraries not already installed)
 
     make
 ```
