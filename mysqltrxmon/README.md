@@ -61,11 +61,6 @@ The CSV emitted is a PSV (pipe-separated value) file.
 An example Python script is in *utils/* to extract and plot values from the PSV.
 
 
-## Issues
-
-*Ncurses* formatting on busy versus quiet servers.
-
-
 ## Build
 
 ### Linux
