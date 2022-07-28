@@ -3,12 +3,12 @@
 
 #### MySQL Transaction Monitor
 
-##### Experimental program for when *Innotop* is unavailable (privileges unavailable, or flaky operation via *Homebrew*).
-
 
 ## Purpose
 
 Monitor and log long-running transactions on a MySQL server.
+
+Substitute for *Innotop* transaction output (when privileges are unavailable, or flaky operation via *Homebrew*).
 
 
 ## Requirements
