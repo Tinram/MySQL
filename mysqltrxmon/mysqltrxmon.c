@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.15
+	* @version       0.16
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "mysqltrxmon"
-#define MB_VERSION "0.15"
+#define MB_VERSION "0.16"
 
 
 void menu(char* const pFName);
@@ -132,7 +132,7 @@ int main(int iArgCount, char* aArgV[])
 		}
 		else
 		{
-			fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", "thd", "ps", "exm", "lock", "mod", "afft", "tmpd", "tlock", "noidx", "wait", "start", "user", "trxstate", "trxopstate", "query");
+			fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", "thd", "ps", "exm", "lock", "mod", "afft", "tmpd", "tlock", "noidx", "wait", "start", "secs", "user", "trxstate", "trxopstate", "query");
 			fclose(fp);
 		}
 	}
@@ -205,7 +205,7 @@ int main(int iArgCount, char* aArgV[])
 		if (iAccess == 1)
 		{
 			mysql_query(pConn, "\
-				SELECT thd.THREAD_ID, thd.PROCESSLIST_ID, stmt.ROWS_EXAMINED, trx.trx_rows_locked, trx.trx_rows_modified, stmt.ROWS_AFFECTED, stmt.CREATED_TMP_DISK_TABLES, trx.trx_tables_locked, stmt.NO_INDEX_USED, ROUND(stmt.TIMER_WAIT/1000000000000, 4), trx.trx_started, thd.PROCESSLIST_USER, trx.trx_state, trx.trx_operation_state, stmt.SQL_TEXT \
+				SELECT thd.THREAD_ID, thd.PROCESSLIST_ID, stmt.ROWS_EXAMINED, trx.trx_rows_locked, trx.trx_rows_modified, stmt.ROWS_AFFECTED, stmt.CREATED_TMP_DISK_TABLES, trx.trx_tables_locked, stmt.NO_INDEX_USED, ROUND(stmt.TIMER_WAIT/1000000000000, 4), trx.trx_started, TO_SECONDS(NOW()) - TO_SECONDS(trx.trx_started), thd.PROCESSLIST_USER, trx.trx_state, trx.trx_operation_state, stmt.SQL_TEXT \
 				FROM information_schema.INNODB_TRX trx \
 					INNER JOIN performance_schema.threads thd ON thd.PROCESSLIST_ID = trx.trx_mysql_thread_id \
 					INNER JOIN performance_schema.events_statements_current stmt USING (THREAD_ID) \
@@ -244,8 +244,9 @@ int main(int iArgCount, char* aArgV[])
 					mvprintw(iRow, 73, "tlk");
 					mvprintw(iRow, 81, "idx");
 					mvprintw(iRow, 89, "wait");
-					mvprintw(iRow, 104, "start");
-					mvprintw(iRow, 131, "user");
+					mvprintw(iRow, 101, "start");
+					mvprintw(iRow, 126, "sec");
+					mvprintw(iRow, 136, "user");
 
 					attron(A_BOLD);
 					attron(COLOR_PAIR(1));
@@ -261,29 +262,30 @@ int main(int iArgCount, char* aArgV[])
 					mvprintw(iRow, 73, row_trx[7]);
 					mvprintw(iRow, 81, "%c", idx);
 					mvprintw(iRow, 89, row_trx[9]);
-					mvprintw(iRow, 104, row_trx[10]);
-					mvprintw(iRow, 131, row_trx[11]);
+					mvprintw(iRow, 101, row_trx[10]);
+					mvprintw(iRow, 126, row_trx[11]);
+					mvprintw(iRow, 136, row_trx[12]);
 
 					attroff(COLOR_PAIR(1));
 					attroff(A_BOLD);
 
 					attron(COLOR_PAIR(5));
-					mvprintw(iRow += 2, 1, row_trx[12]);
+					mvprintw(iRow += 2, 1, row_trx[13]);
 					attroff(COLOR_PAIR(5));
 
 					attron(A_BOLD);
 
-					if (row_trx[13] != NULL)
+					if (row_trx[14] != NULL)
 					{
 						attron(COLOR_PAIR(2));
-						mvprintw(iRow += 1, 1, row_trx[13]);
+						mvprintw(iRow += 1, 1, row_trx[14]);
 						attroff(COLOR_PAIR(2));
 					}
 
-					if (row_trx[14] != NULL)
+					if (row_trx[15] != NULL)
 					{
 						attron(COLOR_PAIR(3));
-						mvprintw(iRow += 1, 1, row_trx[14]);
+						mvprintw(iRow += 1, 1, row_trx[15]);
 						attroff(COLOR_PAIR(3));
 					}
 
@@ -291,7 +293,7 @@ int main(int iArgCount, char* aArgV[])
 
 					if (pLogfile != NULL)
 					{
-						fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%s|%c|%s|%s|%s|%s|%s|%s;\n", row_trx[0], row_trx[1], row_trx[2], row_trx[3], row_trx[4], row_trx[5], row_trx[6], row_trx[7], idx, row_trx[9], row_trx[10], row_trx[11], row_trx[12], row_trx[13], row_trx[14]);
+						fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%s|%c|%s|%s|%s|%s|%s|%s|%s;\n", row_trx[0], row_trx[1], row_trx[2], row_trx[3], row_trx[4], row_trx[5], row_trx[6], row_trx[7], idx, row_trx[9], row_trx[10], row_trx[11], row_trx[12], row_trx[13], row_trx[14], row_trx[15]);
 					}
 				}
 
