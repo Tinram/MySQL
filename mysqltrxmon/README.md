@@ -6,9 +6,9 @@
 
 ## Purpose
 
-Monitor and log long-running transactions on a MySQL server.
+Monitor and record long-running transactions on a MySQL server.
 
-Substitute for *Innotop* transaction output (when privileges are unavailable, or flaky operation via *Homebrew*).
+Substitute for *Innotop* transaction output (when privileges are unavailable, or flaky Mac operation via *Homebrew*).
 
 
 ## Requirements
@@ -16,6 +16,27 @@ Substitute for *Innotop* transaction output (when privileges are unavailable, or
 + Linux or Mac machine.
 + User privileges granted to access the *performance_schema* of the server.
 + For Aurora instances, host must be a read-write endpoint to provide full stats (not a read-only).
+
+
+## Stats
+
+| acronym | transaction attribute                         |
+| ------- | --------------------------------------------- |
+| trx     | number of transactions executing              |
+| hll     | history list length (size of active undo log) |
+| thd     | thread ID                                     |
+| ps      | process ID                                    |
+| exm     | number of table rows examined                 |
+| lock    | number of rows locked                         |
+| mod     | number of rows modified                       |
+| afft    | number of rows affected                       |
+| tmpd    | temporary disk tables generated               |
+| tlk     | number of tables locked                       |
+| idx     | index used or not in transaction query        |
+| wait    | statement event elapsed time (secs)           |
+| start   | transaction start time                        |
+| sec     | time since transaction started (secs)         |
+| user    | user running transaction                      |
 
 
 ## Usage
