@@ -19,7 +19,6 @@
 + [schema\_splitter.php](#schemasplitter)
 + [table\_bench/table\_bench.php](#tablebench) &ndash; insert timer
 + [table\_sizer.php](#tablesizer)
-+ [innodb\_status\_parser.py](#innodbstatusparser)
 
 
 ---
@@ -143,7 +142,7 @@ PHP CLI script to reduce large schema files to just table definitions i.e. remov
 ### Usage
 
 ```bash
-    php schema_cleaner.php <filename>
+    php schema_tools/schema_cleaner.php <filename>
 ```
 
 
@@ -163,13 +162,13 @@ The keyword option enables searching for keywords in table names and table conte
 ### Usage
 
 ```bash
-    php schema_summary.php <filename> [keyword]
+    php schema_tools/schema_summary.php <filename> [keyword]
 ```
 
 Example for querying a large schema file for *user* references in table names and columns:
 
 ```bash
-    php schema_summary.php bigschema.sql user | less
+    php schema_tools/schema_summary.php bigschema.sql user | less
 ```
 
 
@@ -188,13 +187,13 @@ PHP CLI script to split a large MySQL schema file by table definitions into sepa
 ### Usage
 
 ```bash
-    php schema_splitter.php <filename>
+    php schema_tools/schema_splitter.php <filename>
 ```
 
 example:
 
 ```bash
-    php schema_splitter.php schema_example/dbfilltest.sql
+    php schema_tools/schema_splitter.php ../schema_example/dbfilltest.sql
 ```
 
 
@@ -253,50 +252,6 @@ or if made executable:
 ```bash
     ./table_sizer.php
 ```
-
-
----
-
-
-<a id="innodbstatusparser"></a>
-## *innodb_status_parser.py*
-
-
-### Purpose
-
-Extract and highlight some of the important items of the InnoDB monitor output.
-
-
-### Requirements
-
-Python 2 or Python 3.
-
-
-### Set-up
-
-Check CONFIG section parameters, and edit if required.
-
-
-### Usage
-
-```bash
-    python innodb_status_parser.py
-```
-
-or
-
-
-```bash
-    chmod 744 innodb_status_parser.py
-    ./innodb_status_parser.py
-```
-
-prompts for the password (not echoed) of the MySQL server.
-
-If `USE_FILE` in the top configuration section is set to `True`, the script will attempt to parse a previous file dump (`FILENAME` default is `example.txt`) of the InnoDB monitor output.
-
-
----
 
 
 ## License
