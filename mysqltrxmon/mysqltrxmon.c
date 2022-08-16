@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.16
+	* @version       0.17
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "mysqltrxmon"
-#define MB_VERSION "0.16"
+#define MB_VERSION "0.17"
 
 
 void menu(char* const pFName);
@@ -132,7 +132,7 @@ int main(int iArgCount, char* aArgV[])
 		}
 		else
 		{
-			fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", "thd", "ps", "exm", "lock", "mod", "afft", "tmpd", "tlock", "noidx", "wait", "start", "secs", "user", "trxstate", "trxopstate", "query");
+			fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", "trx", "thd", "ps", "exm", "lock", "mod", "afft", "tmpd", "tlock", "noidx", "wait", "start", "secs", "user", "trxstate", "trxopstate", "query");
 			fclose(fp);
 		}
 	}
@@ -205,7 +205,7 @@ int main(int iArgCount, char* aArgV[])
 		if (iAccess == 1)
 		{
 			mysql_query(pConn, "\
-				SELECT thd.THREAD_ID, thd.PROCESSLIST_ID, stmt.ROWS_EXAMINED, trx.trx_rows_locked, trx.trx_rows_modified, stmt.ROWS_AFFECTED, stmt.CREATED_TMP_DISK_TABLES, trx.trx_tables_locked, stmt.NO_INDEX_USED, ROUND(stmt.TIMER_WAIT/1000000000000, 4), trx.trx_started, TO_SECONDS(NOW()) - TO_SECONDS(trx.trx_started), thd.PROCESSLIST_USER, trx.trx_state, trx.trx_operation_state, stmt.SQL_TEXT \
+				SELECT trx.trx_id, thd.THREAD_ID, thd.PROCESSLIST_ID, stmt.ROWS_EXAMINED, trx.trx_rows_locked, trx.trx_rows_modified, stmt.ROWS_AFFECTED, stmt.CREATED_TMP_DISK_TABLES, trx.trx_tables_locked, stmt.NO_INDEX_USED, ROUND(stmt.TIMER_WAIT/1000000000000, 4), trx.trx_started, TO_SECONDS(NOW()) - TO_SECONDS(trx.trx_started), thd.PROCESSLIST_USER, trx.trx_state, trx.trx_operation_state, stmt.SQL_TEXT \
 				FROM information_schema.INNODB_TRX trx \
 					INNER JOIN performance_schema.threads thd ON thd.PROCESSLIST_ID = trx.trx_mysql_thread_id \
 					INNER JOIN performance_schema.events_statements_current stmt USING (THREAD_ID) \
@@ -232,7 +232,7 @@ int main(int iArgCount, char* aArgV[])
 			{
 				if (row_trx != NULL)
 				{
-					char idx = (strcmp("1", row_trx[8]) == 1) ? 'N' : 'Y'; // NO_INDEX_USED -> reversal
+					char idx = (strcmp("1", row_trx[9]) == 1) ? 'N' : 'Y'; // NO_INDEX_USED -> reversal
 
 					mvprintw(iRow, 1, "thd");
 					mvprintw(iRow, 8, "ps");
@@ -252,40 +252,40 @@ int main(int iArgCount, char* aArgV[])
 					attron(COLOR_PAIR(1));
 					iRow++;
 
-					mvprintw(iRow, 1, row_trx[0]);
-					mvprintw(iRow, 8, row_trx[1]);
-					mvprintw(iRow, 16, row_trx[2]);
-					mvprintw(iRow, 28, row_trx[3]);
-					mvprintw(iRow, 42, row_trx[4]);
-					mvprintw(iRow, 53, row_trx[5]);
-					mvprintw(iRow, 64, row_trx[6]);
-					mvprintw(iRow, 73, row_trx[7]);
+					mvprintw(iRow, 1, row_trx[1]);
+					mvprintw(iRow, 8, row_trx[2]);
+					mvprintw(iRow, 16, row_trx[3]);
+					mvprintw(iRow, 28, row_trx[4]);
+					mvprintw(iRow, 42, row_trx[5]);
+					mvprintw(iRow, 53, row_trx[6]);
+					mvprintw(iRow, 64, row_trx[7]);
+					mvprintw(iRow, 73, row_trx[8]);
 					mvprintw(iRow, 81, "%c", idx);
-					mvprintw(iRow, 89, row_trx[9]);
-					mvprintw(iRow, 101, row_trx[10]);
-					mvprintw(iRow, 126, row_trx[11]);
-					mvprintw(iRow, 136, row_trx[12]);
+					mvprintw(iRow, 89, row_trx[10]);
+					mvprintw(iRow, 101, row_trx[11]);
+					mvprintw(iRow, 126, row_trx[12]);
+					mvprintw(iRow, 136, row_trx[13]);
 
 					attroff(COLOR_PAIR(1));
 					attroff(A_BOLD);
 
 					attron(COLOR_PAIR(5));
-					mvprintw(iRow += 2, 1, row_trx[13]);
+					mvprintw(iRow += 2, 1, row_trx[14]);
 					attroff(COLOR_PAIR(5));
 
 					attron(A_BOLD);
 
-					if (row_trx[14] != NULL)
+					if (row_trx[15] != NULL)
 					{
 						attron(COLOR_PAIR(2));
-						mvprintw(iRow += 1, 1, row_trx[14]);
+						mvprintw(iRow += 1, 1, row_trx[15]);
 						attroff(COLOR_PAIR(2));
 					}
 
-					if (row_trx[15] != NULL)
+					if (row_trx[16] != NULL)
 					{
 						attron(COLOR_PAIR(3));
-						mvprintw(iRow += 1, 1, row_trx[15]);
+						mvprintw(iRow += 1, 1, row_trx[16]);
 						attroff(COLOR_PAIR(3));
 					}
 
@@ -293,7 +293,7 @@ int main(int iArgCount, char* aArgV[])
 
 					if (pLogfile != NULL)
 					{
-						fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%s|%c|%s|%s|%s|%s|%s|%s|%s;\n", row_trx[0], row_trx[1], row_trx[2], row_trx[3], row_trx[4], row_trx[5], row_trx[6], row_trx[7], idx, row_trx[9], row_trx[10], row_trx[11], row_trx[12], row_trx[13], row_trx[14], row_trx[15]);
+						fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%s|%s|%c|%s|%s|%s|%s|%s|%s|%s;\n", row_trx[0], row_trx[1], row_trx[2], row_trx[3], row_trx[4], row_trx[5], row_trx[6], row_trx[7], row_trx[8], idx, row_trx[10], row_trx[11], row_trx[12], row_trx[13], row_trx[14], row_trx[15], row_trx[16]);
 					}
 				}
 
