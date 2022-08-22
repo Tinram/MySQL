@@ -79,7 +79,7 @@ Visual monitor with the refresh period reduced to 100 milliseconds:
 The CSV emitted is a PSV (pipe-separated value) file.  
 (Pipe separators are enforced by the logged SQL statements containing commas.)
 
-An example Python script is in *utils/* to extract and plot values from the PSV.
+There are example Python scripts in the *utils/* directory to aggregate concurrent transactions and plot values from the PSV.
 
 
 ## Build
