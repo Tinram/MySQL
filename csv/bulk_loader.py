@@ -30,7 +30,7 @@ import MySQLdb.cursors
 
 CREATE_FINAL_TABLE = True
 
-DATAFILE = 'jumk.csv'
+DATAFILE = 'junk.csv'
 TMP_TABLE_NAME = 'mem_import'
 FINAL_TABLE_NAME = 'users'
 
