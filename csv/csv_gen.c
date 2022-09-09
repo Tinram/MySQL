@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 02/09/2022
-	* @version       0.02
+	* @version       0.03
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -22,9 +22,10 @@
 
 /* CONFIGURATION */
 #define FILENAME "junk.csv"
-#define FIELD_LEN 20
 #define NUM_ROWS 10000000
+
 #define NUM_STANDARD_FIELDS 3
+#define FIELD_LEN 20 // chars
 
 
 int main()
@@ -35,11 +36,12 @@ int main()
 	clock_t tStart = 0;
 
 	/* standard fields */
-	struct buffer {
+	struct buffer
+	{
 		char field[FIELD_LEN + 1];
-	} b[NUM_STANDARD_FIELDS];
+	} buf[NUM_STANDARD_FIELDS];
 
-	/* 2-character field */
+	/* 2-character country code field */
 	char aCC[3];
 
 	srand((unsigned int) time(NULL));
@@ -55,18 +57,20 @@ int main()
 		{
 			for (unsigned int j = 0; j < FIELD_LEN; j++)
 			{
-				b[i].field[j] = (rand() % 26) + 97;
+				buf[i].field[j] = (rand() % 26) + 97;
 			}
-			b[i].field[FIELD_LEN] = '\0';
+
+			buf[i].field[FIELD_LEN] = '\0';
 		}
 
 		for (unsigned int k = 0; k < 2; k++)
 		{
 			aCC[k] = (rand() % 26) + 65;
 		}
+
 		aCC[2] = '\0';
 
-		fprintf(pFile, "%s,%s,%s,%s\n", b[0].field, b[1].field, b[2].field, aCC);
+		fprintf(pFile, "%s,%s,%s,%s\n", buf[0].field, buf[1].field, buf[2].field, aCC);
 	}
 
 	/* timer display, Ben Alpert */
