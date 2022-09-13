@@ -9,7 +9,9 @@
 
     Author:     Martin Latter
     Date:       07/09/2022
-    Version:    0.03
+    Version:    0.04
+    License:    GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
+    Link:       https://github.com/Tinram/MySQL.git
 
     Py req:     MySQLdb
                 pip3 install mysqlclient
@@ -58,7 +60,7 @@ FIELD_NAMES = 'firstname, lastname, country, country_code'
 
 
 """
-server settings to consider using:
+server settings to consider adjusting:
     log_bin = OFF
     innodb_doublewrite = OFF
     innodb_flush_method = O_DIRECT
