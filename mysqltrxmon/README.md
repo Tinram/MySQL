@@ -1,5 +1,5 @@
 
-# mysqltrxmon
+# MySQLTrxMon
 
 #### MySQL Transaction Monitor
 
@@ -15,7 +15,7 @@ Substitute for *Innotop* transaction output (when privileges are unavailable, or
 
 + Linux or Mac machine.
 + User privileges granted to access the *performance_schema* of the server.
-+ For Aurora instances, host must be a read-write endpoint to provide full stats (not a read-only).
++ For Aurora instances, the host must be a read-write endpoint to provide full stats (not a read-only endpoint).
 
 
 ## Stats
@@ -79,7 +79,14 @@ Visual monitor with the refresh period reduced to 100 milliseconds:
 The CSV emitted is a PSV (pipe-separated value) file.  
 (Pipe separators are enforced by the logged SQL statements containing commas.)
 
+Transactions are recorded in real-time, so concurrent transactions will overlap in the PSV.
+
 There are example Python scripts in the *utils/* directory to aggregate concurrent transactions and plot values from the PSV.
+
+
+## Other
+
+Transaction visibility and capture on busy servers is dictated by the refresh rate (`-t`). Not all fast-executing transactions will be captured.
 
 
 ## Build
@@ -94,9 +101,18 @@ There are example Python scripts in the *utils/* directory to aggregate concurre
 
 ### MacOS
 
-Mac is a little trickier, with additional libraries required such as *zstd*. The Linux *makefile* can be run, substituting *gcc* with *clang*, and then the *Homebrew* dependencies fixed (installed) from the error output. Included in *utils/* is an example shell script, the result of  reversal process on an M1 Mac.
+Mac with *Homebrew* 3.6.1+:
+
+```bash
+    cd src/
+    rm makefile
+    mv makefile_mac makefile
+    make
+```
+
+Older *Homebrew* versions can be obstreperous, with additional libraries required such as *zstd*. Compilation error output can be used to fix  (install) *Homebrew* dependencies. Included in *utils/* is an example shell script, the result of the fix process on an M1 Mac.
 
 
 ## License
 
-*mysqtrxmon* is released under the [GPL v.3](https://www.gnu.org/licenses/gpl-3.0.html).
+*MySQLTrxMon* is released under the [GPL v.3](https://www.gnu.org/licenses/gpl-3.0.html).
