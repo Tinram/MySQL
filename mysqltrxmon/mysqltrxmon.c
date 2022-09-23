@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.17
+	* @version       0.18
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "mysqltrxmon"
-#define MB_VERSION "0.17"
+#define MB_VERSION "0.18"
 
 
 void menu(char* const pFName);
@@ -205,10 +205,13 @@ int main(int iArgCount, char* aArgV[])
 		if (iAccess == 1)
 		{
 			mysql_query(pConn, "\
-				SELECT trx.trx_id, thd.THREAD_ID, thd.PROCESSLIST_ID, stmt.ROWS_EXAMINED, trx.trx_rows_locked, trx.trx_rows_modified, stmt.ROWS_AFFECTED, stmt.CREATED_TMP_DISK_TABLES, trx.trx_tables_locked, stmt.NO_INDEX_USED, ROUND(stmt.TIMER_WAIT/1000000000000, 4), trx.trx_started, TO_SECONDS(NOW()) - TO_SECONDS(trx.trx_started), thd.PROCESSLIST_USER, trx.trx_state, trx.trx_operation_state, stmt.SQL_TEXT \
+				SELECT \
+					trx.trx_id, thd.THREAD_ID, thd.PROCESSLIST_ID, stmt.ROWS_EXAMINED, trx.trx_rows_locked, trx.trx_rows_modified, stmt.ROWS_AFFECTED, stmt.CREATED_TMP_DISK_TABLES, trx.trx_tables_locked, stmt.NO_INDEX_USED, ROUND(stmt.TIMER_WAIT/1000000000000, 6), trx.trx_started, TO_SECONDS(NOW()) - TO_SECONDS(trx.trx_started), thd.PROCESSLIST_USER, trx.trx_state, trx.trx_operation_state, stmt.SQL_TEXT \
 				FROM information_schema.INNODB_TRX trx \
-					INNER JOIN performance_schema.threads thd ON thd.PROCESSLIST_ID = trx.trx_mysql_thread_id \
-					INNER JOIN performance_schema.events_statements_current stmt USING (THREAD_ID) \
+				INNER JOIN \
+					performance_schema.threads thd ON thd.PROCESSLIST_ID = trx.trx_mysql_thread_id \
+				INNER JOIN \
+					performance_schema.events_statements_current stmt USING (THREAD_ID) \
 			");
 
 			MYSQL_RES* result_trx = mysql_store_result(pConn);
