@@ -2,7 +2,7 @@
 <?php
 
 /**
-    * PHP CLI script to minimise a MySQL schema from mysqldump.
+    * PHP CLI script to minimise and tidy a MySQL schema from a mysqldump output file.
     *
     * Usage:
     *        php schema_cleaner.php <filename>
@@ -47,7 +47,7 @@ final class SchemaCleaner
         *
         * @author          Martin Latter
         * @copyright       Martin Latter 23/09/2021
-        * @version         0.02, from schema_splitter.php
+        * @version         0.03, from schema_splitter.php
         * @license         GNU GPL v3.0
         * @link            https://github.com/Tinram/MySQL.git
     */
@@ -64,7 +64,10 @@ final class SchemaCleaner
     private $bDebug = false;
 
     /** @var boolean $bRemoveAutoIncrement, toggle AUTO_INCREMENT string removal */
-    private $bRemoveAutoIncrement = false;
+    private $bRemoveAutoIncrement = true;
+
+    /** @var boolean $bRemoveCollates, toggle COLLATE definition removal */
+    private $bRemoveCollates = true;
 
     /** @var boolean $bMatchCreateDropStatements, check that number of CREATE and DROP statements align in the schema */
     private $bMatchCreateDropStatements = false;
@@ -188,7 +191,7 @@ final class SchemaCleaner
                 $iEnd = strpos($sFile, $this->sEndTableMarker, $iStart);
             }
 
-            # N.B. strpos() is much faster than stripos()  (1.5s vs 245s on 2MB schema file)
+            # N.B. strpos() is much faster than stripos() (1.5s vs 245s on 2MB schema file)
 
             $sTable = PHP_EOL;
 
@@ -224,7 +227,28 @@ final class SchemaCleaner
                 $sTable = preg_replace('/ AUTO_INCREMENT=[0-9]+/i', '', $sTable, 1);
             }
 
-            $sFileOutput .= $sTable . DUB_EOL;
+            # remove collate strings
+            if ($this->bRemoveCollates)
+            {
+                $sTable = preg_replace('/COLLATE [\w]+ /', '', $sTable);
+                $sTable = preg_replace('/COLLATE=[\w]+;/', ';', $sTable);
+                $sTable = str_replace(' ;', ';', $sTable);
+            }
+
+            # add whitespace to improve readability
+            $sTable = preg_replace('/(CREATE TABLE .+ \()/', '${1}' . "\n", $sTable, 1);
+            $sTable = str_replace(') ENGINE', "\n) ENGINE", $sTable);
+            $sTable = preg_replace('/(.+PRIMARY KEY \()/', "\n" . '${1}', $sTable, 1);
+
+            # capitalise data types
+            $aTypes = ['INT', 'TINYINT', 'SMALLINT', 'MEDIUMINT', 'BIGINT', 'FLOAT', 'DOUBLE', 'DECIMAL', 'CHAR', 'VARCHAR', 'TEXT', 'TINYTEXT', 'MEDIUMTEXT', 'LONGTEXT', 'BLOB', 'MEDIUMBLOB', 'LONGBLOB', 'BINARY', 'VARBINARY', 'DATE', 'DATETIME', 'TIME', 'TIMESTAMP', 'YEAR', 'BIT', 'BOOLEAN', 'ENUM', 'UNSIGNED'];
+
+            foreach ($aTypes as $sType)
+            {
+                $sTable = str_ireplace(' ' . $sType, ' ' . $sType, $sTable);
+            }
+
+            $sFileOutput .= $sTable . DUB_EOL . PHP_EOL;
         }
 
         $iFileWrite = file_put_contents($this->sOutputFile, $sFileOutput);
