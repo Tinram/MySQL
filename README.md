@@ -14,7 +14,7 @@
 + [mysql\_vars.sh](#mysqlvars) &ndash; variable display
 + [mysql\_varmon.sh](#mysqlvarmon) &ndash; variable monitor
 + [mysql\_grants.sh](#mysqlgrants)
-+ [schema\_cleaner.php](#schemacleaner) &ndash; schema file reducer
++ [schema\_cleaner.php](#schemacleaner) &ndash; schema file clarifier
 + [schema\_summary.php](#schemasummary) &ndash; schema file info extractor
 + [schema\_splitter.php](#schemasplitter)
 + [table\_bench/table\_bench.php](#tablebench) &ndash; insert timer
@@ -136,13 +136,13 @@ Connect as root user.
 
 ### Purpose
 
-PHP CLI script to reduce large schema files to just table definitions i.e. removing *mysqldump* comments and directives.
+PHP CLI script to reduce and clarify a schema definition file from *mysqldump* (`-d` / `--no-data`) i.e. removing *mysqldump* comments and directives. (The output file is not suitable for import into MySQL.)
 
 
 ### Usage
 
 ```bash
-    php schema_tools/schema_cleaner.php <filename>
+    php schema_tools/schema_cleaner.php <filename.sql>
 ```
 
 
