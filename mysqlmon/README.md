@@ -3,6 +3,7 @@
 
 #### MySQL instance counters monitor.
 
+<br>
 
 [1]: https://tinram.github.io/images/mysqlmon.png
 ![mysqlmon][1]
