@@ -1,7 +1,7 @@
 
 # MySQLTrxMon
 
-#### MySQL Transaction Monitor
+#### MySQL Transaction Monitor.
 
 
 ## Purpose
@@ -14,7 +14,7 @@ Substitute for *Innotop* transaction output (when privileges are unavailable, or
 ## Requirements
 
 + Linux or Mac machine.
-+ User privileges granted to access the *performance_schema* of the server.
++ User privileges granted to access the *performance schema* of the server.
 + For Aurora instances, the host must be a read-write endpoint to provide full stats (not a read-only endpoint).
 
 
