@@ -1,5 +1,5 @@
 
-# mysqlmon
+# MySQLMon
 
 #### MySQL instance counters monitor.
 
@@ -46,4 +46,4 @@ For Aurora connections, make sure the host is a read-write endpoint to provide f
 
 ## License
 
-*mysqlmon* is released under the [GPL v.3](https://www.gnu.org/licenses/gpl-3.0.html).
+*MySQLMon* is released under the [GPL v.3](https://www.gnu.org/licenses/gpl-3.0.html).
