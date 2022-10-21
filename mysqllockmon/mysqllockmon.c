@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/07/2022
-	* @version       0.14 (from mysqltrxmon)
+	* @version       0.15 (from mysqltrxmon)
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "mysqllockmon"
-#define MB_VERSION "0.14"
+#define MB_VERSION "0.15"
 
 
 void signal_handler(int iSig);
@@ -79,7 +79,7 @@ int main(int iArgCount, char* aArgV[])
 	unsigned int iMDL = 0;
 	int iRow = 0;
 	int iKey = 0;
-	char cDisplay = 'T'; /* trx display default */
+	char cDisplay = 'T'; /* TRX display default. */
 	char aVersion[6];
 
 	pProgname = aArgV[0];
@@ -96,7 +96,7 @@ int main(int iArgCount, char* aArgV[])
 	}
 	else
 	{
-		pPassword = getpass("password: "); // obsolete fn, use termios.h in future
+		pPassword = getpass("password: "); /* Obsolete fn, use termios.h in future. */
 	}
 
 	pConn = mysql_init(NULL);
@@ -175,8 +175,8 @@ int main(int iArgCount, char* aArgV[])
 		iRow++;
 		mvprintw(iRow, 1, "%s", aVersion);
 
-		/* TRX at InnoDB layer */
-		mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX"); /* includes RUNNING, LOCK WAIT, ROLLING BACK, COMMITTING */
+		/* TRX at InnoDB layer. */
+		mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX"); /* Includes RUNNING, LOCK WAIT, ROLLING BACK, COMMITTING */
 		MYSQL_RES* result_acttr = mysql_store_result(pConn);
 
 		if (mysql_errno(pConn) == 0)
@@ -230,11 +230,11 @@ int main(int iArgCount, char* aArgV[])
 
 		if (iKey == KEY_UP)
 		{
-			cDisplay = 'T'; /* trx */
+			cDisplay = 'T'; /* TRX */
 		}
 		else if (iKey == KEY_DOWN)
 		{
-			cDisplay = 'I'; /* innodb locks */
+			cDisplay = 'I'; /* InnoDB locks */
 		}
 		else if (iKey == KEY_LEFT)
 		{
@@ -511,7 +511,7 @@ int main(int iArgCount, char* aArgV[])
 				attrset(A_NORMAL);
 			}
 
-			if (iV8 != 1) // v.5.7
+			if (iV8 != 1) /* v.5.7 */
 			{
 				mysql_query(pConn, "\
 					SELECT \
@@ -521,7 +521,7 @@ int main(int iArgCount, char* aArgV[])
 					WHERE \
 						OBJECT_SCHEMA <> 'performance_schema' \
 				");
-					/* join on sys.session is simply too expensive: 50 QPS >> 2500+ QPS */
+					/* Join on sys.session is simply too expensive: 50 QPS >> 2500+ QPS */
 
 				MYSQL_RES* result_trx = mysql_store_result(pConn);
 				MYSQL_ROW row_trx;
@@ -563,7 +563,7 @@ int main(int iArgCount, char* aArgV[])
 
 				mysql_free_result(result_trx);
 			}
-			else // v.8.0+
+			else /* v.8.0+ */
 			{
 				mysql_query(pConn, "\
 					SELECT \
