@@ -21,8 +21,8 @@ Now it's my preferred tool to monitor active transaction and *History List Lengt
 
 + Linux x64
 + MacOS
-    + use *Clang*
-    + missing libraries:
+	+ `make` works on recent Mac / *Homebrew* versions
+    + else if missing libraries:
         + `brew --prefix <lib>` # = path
         + `-L/<path>` in *make*-generated *Clang* call
 
