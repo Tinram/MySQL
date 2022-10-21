@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.19
+	* @version       0.20
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -34,12 +34,12 @@
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.19"
+#define MB_VERSION "0.20"
 
 
+void signal_handler(int iSig);
 void menu(char* const pFName);
 unsigned int options(int iArgCount, char* aArgV[]);
-void signal_handler(int iSig);
 
 
 char* pHost = NULL;
@@ -70,9 +70,12 @@ int main(int iArgCount, char* aArgV[])
 {
 	MYSQL* pConn;
 	const char* pMaria = "MariaDB";
+	char aVersion[6];
+	char aAuroraVersion[6];
 	unsigned int iMenu = options(iArgCount, aArgV);
 	unsigned int iAccess = 0;
 	unsigned int iMaria = 0;
+	unsigned int iAurora = 0;
 	unsigned int iOldQueries = 0;
 	unsigned int iQueries = 0;
 
@@ -90,7 +93,7 @@ int main(int iArgCount, char* aArgV[])
 	}
 	else
 	{
-		pPassword = getpass("password: "); // obsolete fn, use termios.h in future
+		pPassword = getpass("password: "); /* Obsolete fn, use termios.h in future. */
 	}
 
 	pConn = mysql_init(NULL);
@@ -117,7 +120,7 @@ int main(int iArgCount, char* aArgV[])
 		return EXIT_FAILURE;
 	}
 
-	/* Identify MariaDB which does not natively possess sys schema. */
+	/* Identify MySQL version | MariaDB (which does not natively possess sys schema). */
 	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'version'");
 	MYSQL_RES* result_ver = mysql_store_result(pConn);
 	MYSQL_ROW row_ver = mysql_fetch_row(result_ver);
@@ -125,9 +128,21 @@ int main(int iArgCount, char* aArgV[])
 	{
 		iMaria = 1;
 	}
+	strncpy(aVersion, row_ver[1], sizeof(aVersion));
 	mysql_free_result(result_ver);
 
-	mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* total queries, not conn questions */
+	/* Identify Aurora version, if applicable. */
+	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'aurora_version'");
+	MYSQL_RES* result_aur_ver = mysql_store_result(pConn);
+	MYSQL_ROW row_aur_ver = mysql_fetch_row(result_aur_ver);
+	if (row_aur_ver != NULL)
+	{
+		iAurora = 1;
+		strncpy(aAuroraVersion, row_aur_ver[1], sizeof(aAuroraVersion));
+	}
+	mysql_free_result(result_aur_ver);
+
+	mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* Total queries, not conn questions. */
 	MYSQL_RES* result_queries = mysql_store_result(pConn);
 	MYSQL_ROW row_queries = mysql_fetch_row(result_queries);
 	iOldQueries = (unsigned int) atoi(row_queries[1]);
@@ -145,14 +160,25 @@ int main(int iArgCount, char* aArgV[])
 		mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'hostname'");
 		MYSQL_RES* result_hn = mysql_store_result(pConn);
 		MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
+		mysql_free_result(result_hn);
 		attrset(A_BOLD);
 		printw("\n %s\n", row_hn[1]);
 		attrset(A_NORMAL);
-		if (iMaria == 1)
+		if (iMaria == 0)
 		{
-			printw(" %s\n", pMaria);
+			if (iAurora == 0)
+			{
+				printw(" %s\n", aVersion);
+			}
+			else
+			{
+				printw(" %s (au: %s)\n", aVersion, aAuroraVersion);
+			}
 		}
-		mysql_free_result(result_hn);
+		else
+		{
+			printw(" %s %s\n", pMaria, aVersion);
+		}
 		printw("\n");
 
 		mysql_query(pConn, "SHOW STATUS WHERE Variable_name = 'Threads_connected'");
@@ -241,10 +267,11 @@ int main(int iArgCount, char* aArgV[])
 
 		/* TRX at MySQL layer */
 		mysql_query(pConn, "SELECT COUNT(*) FROM performance_schema.events_transactions_current WHERE state = 'ACTIVE' AND timer_wait > 1000000000000 * 1");
-			/* requires performance_schema setup_consumers.events_transactions_current and setup_instruments.transaction to be enabled */
+			/* Requires performance_schema setup_consumers.events_transactions_current and setup_instruments.transaction to be enabled. */
 		MYSQL_RES* result_trx1 = mysql_store_result(pConn);
 
-		if (mysql_errno(pConn) == 0) /* upon access denied error, set limit for less privileged users */
+		/* Upon access denied error, set limit for less privileged users. */
+		if (mysql_errno(pConn) == 0)
 		{
 			iAccess = 1;
 		}
@@ -259,8 +286,8 @@ int main(int iArgCount, char* aArgV[])
 
 		if (iAccess == 1)
 		{
-			/* TRX at InnoDB layer */
-			mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX"); /* includes all trx_state: RUNNING, LOCK WAIT, ROLLING BACK, COMMITTING */
+			/* TRX at InnoDB layer. */
+			mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX"); /* Includes all trx_state: RUNNING, LOCK WAIT, ROLLING BACK, COMMITTING */
 			MYSQL_RES* result_trx2 = mysql_store_result(pConn);
 			MYSQL_ROW row_trx2 = mysql_fetch_row(result_trx2);
 			printw(" active trx (innodb): %s\n", row_trx2[0]);
@@ -348,11 +375,11 @@ int main(int iArgCount, char* aArgV[])
 		printw(" rows deleted: %s\n\n", row_ird[1]);
 		mysql_free_result(result_ird);
 
-		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* total queries, not conn questions */
+		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* Total queries, not conn questions. */
 		MYSQL_RES* result_queries2 = mysql_store_result(pConn);
 		MYSQL_ROW row_queries2 = mysql_fetch_row(result_queries2);
 		iQueries = (unsigned int) atoi(row_queries2[1]);
-		/* in tests close to Innotop's QPS */
+		/* In tests, close to Innotop's QPS. */
 		unsigned int iDiff = iQueries - iOldQueries;
 		iOldQueries = iQueries;
 		attrset(A_BOLD | COLOR_PAIR(1));
@@ -376,7 +403,7 @@ int main(int iArgCount, char* aArgV[])
 			mysql_free_result(result_bpf);
 		}
 
-		if (iAccess == 1 && iMaria == 0) /* block sys access to MariaDB */
+		if (iAccess == 1 && iMaria == 0) /* Block sys access to MariaDB. */
 		{
 			mysql_query(pConn, "SELECT ROUND(100 - (100 * (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_pages_read') / (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_buffer_pool_read_requests')), 2)");
 			MYSQL_RES* result_bphr = mysql_store_result(pConn);
