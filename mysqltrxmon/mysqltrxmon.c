@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.18
+	* @version       0.19
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,13 +33,13 @@
 
 
 #define APP_NAME "mysqltrxmon"
-#define MB_VERSION "0.18"
+#define MB_VERSION "0.19"
 
 
-void menu(char* const pFName);
-unsigned int options(int iArgCount, char* aArgV[]);
-int mssleep(unsigned int ms);
 void signal_handler(int iSig);
+void menu(char* const pFName);
+int mssleep(unsigned int ms);
+unsigned int options(int iArgCount, char* aArgV[]);
 
 
 char* pHost = NULL;
@@ -74,9 +74,14 @@ int main(int iArgCount, char* aArgV[])
 {
 	MYSQL* pConn;
 	FILE* fp;
+	const char* pMaria = "MariaDB";
+	char aVersion[6];
+	char aAuroraVersion[8];
 	unsigned int iMenu = options(iArgCount, aArgV);
 	unsigned int iPS = 0;
 	unsigned int iAccess = 0;
+	unsigned int iMaria = 0;
+	unsigned int iAurora = 0;
 	int iRow = 0;
 	pProgname = aArgV[0];
 
@@ -92,7 +97,7 @@ int main(int iArgCount, char* aArgV[])
 	}
 	else
 	{
-		pPassword = getpass("password: "); // obsolete fn, use termios.h in future
+		pPassword = getpass("password: "); /* Obsolete fn, use termios.h in future. */
 	}
 
 	pConn = mysql_init(NULL);
@@ -118,6 +123,28 @@ int main(int iArgCount, char* aArgV[])
 		mysql_close(pConn);
 		return EXIT_FAILURE;
 	}
+
+	/* Identify MySQL version | MariaDB. */
+	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'version'");
+	MYSQL_RES* result_ver = mysql_store_result(pConn);
+	MYSQL_ROW row_ver = mysql_fetch_row(result_ver);
+	if (strstr(row_ver[1], pMaria) != NULL)
+	{
+		iMaria = 1;
+	}
+	strncpy(aVersion, row_ver[1], sizeof(aVersion));
+	mysql_free_result(result_ver);
+
+	/* Identify Aurora version, if applicable. */
+	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'aurora_version'");
+	MYSQL_RES* result_aur_ver = mysql_store_result(pConn);
+	MYSQL_ROW row_aur_ver = mysql_fetch_row(result_aur_ver);
+	if (row_aur_ver != NULL)
+	{
+		iAurora = 1;
+		strncpy(aAuroraVersion, row_aur_ver[1], sizeof(aAuroraVersion));
+	}
+	mysql_free_result(result_aur_ver);
 
 	/* Create logfile header row. */
 	if (pLogfile != NULL)
@@ -164,13 +191,28 @@ int main(int iArgCount, char* aArgV[])
 		mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'hostname'");
 		MYSQL_RES* result_hn = mysql_store_result(pConn);
 		MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
+		mysql_free_result(result_hn);
 		attron(A_BOLD);
 		mvprintw(iRow, 1, row_hn[1]);
 		attroff(A_BOLD);
-		mysql_free_result(result_hn);
+		if (iMaria == 0)
+		{
+			if (iAurora == 0)
+			{
+				mvprintw(iRow += 1, 1, aVersion);
+			}
+			else
+			{
+				mvprintw(iRow += 1, 1, "%s (au: %s)", aVersion, aAuroraVersion);
+			}
+		}
+		else
+		{
+			mvprintw(iRow += 1, 1, "%s %s", pMaria, aVersion);
+		}
 
 		/* TRX at InnoDB layer */
-		mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX"); /* includes RUNNING, LOCK WAIT, ROLLING BACK, COMMITTING */
+		mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX"); /* Includes RUNNING, LOCK WAIT, ROLLING BACK, COMMITTING */
 		MYSQL_RES* result_acttr = mysql_store_result(pConn);
 
 		if (mysql_errno(pConn) == 0)
