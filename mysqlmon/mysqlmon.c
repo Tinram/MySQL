@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.20
+	* @version       0.21
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -34,7 +34,7 @@
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.20"
+#define MB_VERSION "0.21"
 
 
 void signal_handler(int iSig);
@@ -71,7 +71,7 @@ int main(int iArgCount, char* aArgV[])
 	MYSQL* pConn;
 	const char* pMaria = "MariaDB";
 	char aVersion[6];
-	char aAuroraVersion[6];
+	char aAuroraVersion[8];
 	unsigned int iMenu = options(iArgCount, aArgV);
 	unsigned int iAccess = 0;
 	unsigned int iMaria = 0;
