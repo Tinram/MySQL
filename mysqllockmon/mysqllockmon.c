@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/07/2022
-	* @version       0.15 (from mysqltrxmon)
+	* @version       0.16 (from mysqltrxmon)
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "mysqllockmon"
-#define MB_VERSION "0.15"
+#define MB_VERSION "0.16"
 
 
 void signal_handler(int iSig);
@@ -80,7 +80,8 @@ int main(int iArgCount, char* aArgV[])
 	int iRow = 0;
 	int iKey = 0;
 	char cDisplay = 'T'; /* TRX display default. */
-	char aVersion[6];
+	char aHostname[21];
+	char aVersion[7];
 
 	pProgname = aArgV[0];
 
@@ -128,11 +129,22 @@ int main(int iArgCount, char* aArgV[])
 		return EXIT_FAILURE;
 	}
 
+	/* Assign hostname. */
+	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'hostname'");
+	MYSQL_RES* result_hn = mysql_store_result(pConn);
+	MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
+	unsigned int iHLen = sizeof(aHostname) - 1;
+	strncpy(aHostname, row_hn[1], iHLen);
+	aHostname[iHLen] = '\0';
+	mysql_free_result(result_hn);
+
 	/* Identify MySQL version. */
 	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'version'");
 	MYSQL_RES* result_ver = mysql_store_result(pConn);
 	MYSQL_ROW row_ver = mysql_fetch_row(result_ver);
-	strncpy(aVersion, row_ver[1], sizeof(aVersion));
+	unsigned int iVLen = sizeof(aVersion) - 1;
+	strncpy(aVersion, row_ver[1], iVLen);
+	aVersion[iVLen] = '\0';
 	if ((unsigned int) atoi(row_ver[1]) >= 8)
 	{
 		iV8 = 1;
@@ -163,15 +175,11 @@ int main(int iArgCount, char* aArgV[])
 		clear();
 		iRow = 1;
 
-		mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'hostname'");
-		MYSQL_RES* result_hn = mysql_store_result(pConn);
-		MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
 		mvprintw(iRow, 1, APP_NAME);
 		iRow += 2;
 		attron(A_BOLD);
-		mvprintw(iRow, 1, row_hn[1]);
+		mvprintw(iRow, 1, "%s", aHostname);
 		attroff(A_BOLD);
-		mysql_free_result(result_hn);
 		iRow++;
 		mvprintw(iRow, 1, "%s", aVersion);
 
