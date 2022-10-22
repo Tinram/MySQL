@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.21
+	* @version       0.22
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -34,7 +34,7 @@
 
 
 #define APP_NAME "MySQL Mon"
-#define MB_VERSION "0.21"
+#define MB_VERSION "0.22"
 
 
 void signal_handler(int iSig);
@@ -70,8 +70,9 @@ int main(int iArgCount, char* aArgV[])
 {
 	MYSQL* pConn;
 	const char* pMaria = "MariaDB";
-	char aVersion[6];
-	char aAuroraVersion[8];
+	char aHostname[21];
+	char aVersion[7];
+	char aAuroraVersion[9];
 	unsigned int iMenu = options(iArgCount, aArgV);
 	unsigned int iAccess = 0;
 	unsigned int iMaria = 0;
@@ -120,6 +121,15 @@ int main(int iArgCount, char* aArgV[])
 		return EXIT_FAILURE;
 	}
 
+	/* Assign hostname. */
+	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'hostname'");
+	MYSQL_RES* result_hn = mysql_store_result(pConn);
+	MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
+	unsigned int iHLen = sizeof(aHostname) - 1;
+	strncpy(aHostname, row_hn[1], iHLen);
+	aHostname[iHLen] = '\0';
+	mysql_free_result(result_hn);
+
 	/* Identify MySQL version | MariaDB (which does not natively possess sys schema). */
 	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'version'");
 	MYSQL_RES* result_ver = mysql_store_result(pConn);
@@ -128,7 +138,9 @@ int main(int iArgCount, char* aArgV[])
 	{
 		iMaria = 1;
 	}
-	strncpy(aVersion, row_ver[1], sizeof(aVersion));
+	unsigned int iVLen = sizeof(aVersion) - 1;
+	strncpy(aVersion, row_ver[1], iVLen);
+	aVersion[iVLen] = '\0';
 	mysql_free_result(result_ver);
 
 	/* Identify Aurora version, if applicable. */
@@ -138,7 +150,9 @@ int main(int iArgCount, char* aArgV[])
 	if (row_aur_ver != NULL)
 	{
 		iAurora = 1;
-		strncpy(aAuroraVersion, row_aur_ver[1], sizeof(aAuroraVersion));
+		unsigned int iAVLen = sizeof(aAuroraVersion) - 1;
+		strncpy(aAuroraVersion, row_aur_ver[1], iAVLen);
+		aAuroraVersion[iAVLen] = '\0';
 	}
 	mysql_free_result(result_aur_ver);
 
@@ -157,12 +171,8 @@ int main(int iArgCount, char* aArgV[])
 	{
 		clear();
 
-		mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'hostname'");
-		MYSQL_RES* result_hn = mysql_store_result(pConn);
-		MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
-		mysql_free_result(result_hn);
 		attrset(A_BOLD);
-		printw("\n %s\n", row_hn[1]);
+		printw("\n %s\n", aHostname);
 		attrset(A_NORMAL);
 		if (iMaria == 0)
 		{
