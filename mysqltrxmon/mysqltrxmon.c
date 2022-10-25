@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.20
+	* @version       0.21
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -32,8 +32,8 @@
 #include <mysql.h>
 
 
-#define APP_NAME "mysqltrxmon"
-#define MB_VERSION "0.20"
+#define APP_NAME "MySQLTrxMon"
+#define MB_VERSION "0.21"
 
 
 void signal_handler(int iSig);
@@ -78,6 +78,7 @@ int main(int iArgCount, char* aArgV[])
 	char aHostname[21];
 	char aVersion[7];
 	char aAuroraVersion[9];
+	char aAuroraServerId[41];
 	unsigned int iMenu = options(iArgCount, aArgV);
 	unsigned int iPS = 0;
 	unsigned int iAccess = 0;
@@ -151,14 +152,24 @@ int main(int iArgCount, char* aArgV[])
 	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'aurora_version'");
 	MYSQL_RES* result_aur_ver = mysql_store_result(pConn);
 	MYSQL_ROW row_aur_ver = mysql_fetch_row(result_aur_ver);
+	mysql_free_result(result_aur_ver);
+
 	if (row_aur_ver != NULL)
 	{
 		iAurora = 1;
 		unsigned int iAVLen = sizeof(aAuroraVersion) - 1;
 		strncpy(aAuroraVersion, row_aur_ver[1], iAVLen);
 		aAuroraVersion[iAVLen] = '\0';
+
+		mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'aurora_server_id'");
+		MYSQL_RES* result_aur_sid = mysql_store_result(pConn);
+		MYSQL_ROW row_aur_sid = mysql_fetch_row(result_aur_sid);
+		mysql_free_result(result_aur_sid);
+
+		unsigned int iASIdLen = sizeof(aAuroraServerId) - 1;
+		strncpy(aAuroraServerId, row_aur_sid[1], iASIdLen);
+		aAuroraServerId[iASIdLen] = '\0';
 	}
-	mysql_free_result(result_aur_ver);
 
 	/* Create logfile header row. */
 	if (pLogfile != NULL)
@@ -203,8 +214,16 @@ int main(int iArgCount, char* aArgV[])
 		iRow = 1;
 
 		attron(A_BOLD);
-		mvprintw(iRow, 1, aHostname);
+		if (iAurora == 0)
+		{
+			mvprintw(iRow, 1, aHostname);
+		}
+		else
+		{
+			mvprintw(iRow, 1, aAuroraServerId);
+		}
 		attroff(A_BOLD);
+
 		if (iMaria == 0)
 		{
 			if (iAurora == 0)
