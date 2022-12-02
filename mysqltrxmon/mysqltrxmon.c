@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.21
+	* @version       0.22
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,12 +33,13 @@
 
 
 #define APP_NAME "MySQLTrxMon"
-#define MB_VERSION "0.21"
+#define MB_VERSION "0.22"
 
 
 void signal_handler(int iSig);
+void replaceChar(char* aSQL, char cOrg, char cRep);
 void menu(char* const pFName);
-int mssleep(unsigned int ms);
+int msSleep(unsigned int ms);
 unsigned int options(int iArgCount, char* aArgV[]);
 
 
@@ -75,16 +76,21 @@ int main(int iArgCount, char* aArgV[])
 	MYSQL* pConn;
 	FILE* fp;
 	const char* pMaria = "MariaDB";
-	char aHostname[21];
+	char aHostname[50];
 	char aVersion[7];
 	char aAuroraVersion[9];
-	char aAuroraServerId[41];
+	char aAuroraServerId[50];
 	unsigned int iMenu = options(iArgCount, aArgV);
 	unsigned int iPS = 0;
 	unsigned int iAccess = 0;
 	unsigned int iMaria = 0;
 	unsigned int iAurora = 0;
+	unsigned int iPadWidth = 157; // 160 for 13" MacBook
+	unsigned int iPadHeight = 35; // 30-50; fullscreen terminal differs to windowed
 	int iRow = 0;
+	int iCh;
+	int iPadPos = 0;
+
 	pProgname = aArgV[0];
 
 	if (signal(SIGINT, signal_handler) == SIG_ERR)
@@ -125,6 +131,12 @@ int main(int iArgCount, char* aArgV[])
 		mysql_close(pConn);
 		return EXIT_FAILURE;
 	}
+
+	/* Create pad for scrolling. */
+	WINDOW* pPad = newpad(iPadHeight, iPadWidth);
+	keypad(pPad, TRUE);
+	nodelay(pPad, TRUE);
+	scrollok(pPad, TRUE);
 
 	/* Assign hostname. */
 	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'hostname'");
@@ -211,6 +223,8 @@ int main(int iArgCount, char* aArgV[])
 	while ( ! iSigCaught)
 	{
 		clear();
+		wclear(pPad);
+
 		iRow = 1;
 
 		attron(A_BOLD);
@@ -241,7 +255,7 @@ int main(int iArgCount, char* aArgV[])
 		}
 
 		/* TRX at InnoDB layer */
-		mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX"); /* Includes RUNNING, LOCK WAIT, ROLLING BACK, COMMITTING */
+		mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX"); /* Includes RUNNING, LOCK WAIT, ROLLING BACK, COMMITTING. */
 		MYSQL_RES* result_acttr = mysql_store_result(pConn);
 
 		if (mysql_errno(pConn) == 0)
@@ -275,14 +289,33 @@ int main(int iArgCount, char* aArgV[])
 
 		if (iAccess == 1)
 		{
+			iRow = 8;
+
+			mvprintw(iRow, 1, "thd");
+			mvprintw(iRow, 8, "ps");
+			mvprintw(iRow, 16, "exm");
+			mvprintw(iRow, 28, "lock");
+			mvprintw(iRow, 42, "mod");
+			mvprintw(iRow, 53, "afft");
+			mvprintw(iRow, 64, "tmpd");
+			mvprintw(iRow, 73, "tlk");
+			mvprintw(iRow, 81, "idx");
+			mvprintw(iRow, 89, "wait");
+			mvprintw(iRow, 101, "start");
+			mvprintw(iRow, 126, "sec");
+			mvprintw(iRow, 136, "user");
+
 			mysql_query(pConn, "\
 				SELECT \
-					trx.trx_id, thd.THREAD_ID, thd.PROCESSLIST_ID, stmt.ROWS_EXAMINED, trx.trx_rows_locked, trx.trx_rows_modified, stmt.ROWS_AFFECTED, stmt.CREATED_TMP_DISK_TABLES, trx.trx_tables_locked, stmt.NO_INDEX_USED, ROUND(stmt.TIMER_WAIT/1000000000000, 6), trx.trx_started, TO_SECONDS(NOW()) - TO_SECONDS(trx.trx_started), thd.PROCESSLIST_USER, trx.trx_state, trx.trx_operation_state, stmt.SQL_TEXT \
-				FROM information_schema.INNODB_TRX trx \
+					trx.trx_id, thd.THREAD_ID, thd.PROCESSLIST_ID, stmt.ROWS_EXAMINED, trx.trx_rows_locked, trx.trx_rows_modified, stmt.ROWS_AFFECTED, stmt.CREATED_TMP_DISK_TABLES, trx.trx_tables_locked, stmt.NO_INDEX_USED, ROUND(stmt.TIMER_WAIT/1000000000000, 6), trx.trx_started, TO_SECONDS(NOW()) - TO_SECONDS(trx.trx_started) AS duration, thd.PROCESSLIST_USER, trx.trx_state, trx.trx_operation_state, stmt.SQL_TEXT \
+				FROM \
+					information_schema.INNODB_TRX trx \
 				INNER JOIN \
 					performance_schema.threads thd ON thd.PROCESSLIST_ID = trx.trx_mysql_thread_id \
 				INNER JOIN \
 					performance_schema.events_statements_current stmt USING (THREAD_ID) \
+				ORDER BY \
+					duration DESC \
 			");
 
 			MYSQL_RES* result_trx = mysql_store_result(pConn);
@@ -300,70 +333,57 @@ int main(int iArgCount, char* aArgV[])
 				}
 			}
 
-			iRow = 8;
+			iRow = 0;
 
 			while ((row_trx = mysql_fetch_row(result_trx)))
 			{
 				if (row_trx != NULL)
 				{
 					char idx = (strcmp("1", row_trx[9]) == 1) ? 'N' : 'Y'; // NO_INDEX_USED -> reversal
-
-					mvprintw(iRow, 1, "thd");
-					mvprintw(iRow, 8, "ps");
-					mvprintw(iRow, 16, "exm");
-					mvprintw(iRow, 28, "lock");
-					mvprintw(iRow, 42, "mod");
-					mvprintw(iRow, 53, "afft");
-					mvprintw(iRow, 64, "tmpd");
-					mvprintw(iRow, 73, "tlk");
-					mvprintw(iRow, 81, "idx");
-					mvprintw(iRow, 89, "wait");
-					mvprintw(iRow, 101, "start");
-					mvprintw(iRow, 126, "sec");
-					mvprintw(iRow, 136, "user");
-
-					attron(A_BOLD);
-					attron(COLOR_PAIR(1));
 					iRow++;
 
-					mvprintw(iRow, 1, row_trx[1]);
-					mvprintw(iRow, 8, row_trx[2]);
-					mvprintw(iRow, 16, row_trx[3]);
-					mvprintw(iRow, 28, row_trx[4]);
-					mvprintw(iRow, 42, row_trx[5]);
-					mvprintw(iRow, 53, row_trx[6]);
-					mvprintw(iRow, 64, row_trx[7]);
-					mvprintw(iRow, 73, row_trx[8]);
-					mvprintw(iRow, 81, "%c", idx);
-					mvprintw(iRow, 89, row_trx[10]);
-					mvprintw(iRow, 101, row_trx[11]);
-					mvprintw(iRow, 126, row_trx[12]);
-					mvprintw(iRow, 136, row_trx[13]);
+					wattrset(pPad, A_BOLD | COLOR_PAIR(1));
+					mvwprintw(pPad, iRow, 1, row_trx[1]);
+					mvwprintw(pPad, iRow, 8, row_trx[2]);
+					mvwprintw(pPad, iRow, 16, row_trx[3]);
+					mvwprintw(pPad, iRow, 28, row_trx[4]);
+					mvwprintw(pPad, iRow, 42, row_trx[5]);
+					mvwprintw(pPad, iRow, 53, row_trx[6]);
+					mvwprintw(pPad, iRow, 64, row_trx[7]);
+					mvwprintw(pPad, iRow, 73, row_trx[8]);
+					mvwprintw(pPad, iRow, 81, "%c", idx);
+					mvwprintw(pPad, iRow, 89, row_trx[10]);
+					mvwprintw(pPad, iRow, 101, row_trx[11]);
+					mvwprintw(pPad, iRow, 126, row_trx[12]);
+					mvwprintw(pPad, iRow, 136, row_trx[13]);
+					wattrset(pPad, A_NORMAL);
 
-					attroff(COLOR_PAIR(1));
-					attroff(A_BOLD);
-
-					attron(COLOR_PAIR(5));
-					mvprintw(iRow += 2, 1, row_trx[14]);
-					attroff(COLOR_PAIR(5));
-
-					attron(A_BOLD);
+					wattron(pPad, COLOR_PAIR(5));
+					mvwprintw(pPad, iRow += 2, 1, row_trx[14]);
+					wattroff(pPad, COLOR_PAIR(5));
 
 					if (row_trx[15] != NULL)
 					{
-						attron(COLOR_PAIR(2));
-						mvprintw(iRow += 1, 1, row_trx[15]);
-						attroff(COLOR_PAIR(2));
+						wattrset(pPad, A_BOLD | COLOR_PAIR(3));
+						mvwprintw(pPad, iRow += 1, 1, row_trx[15]);
+						wattrset(pPad, A_NORMAL);
 					}
 
 					if (row_trx[16] != NULL)
 					{
-						attron(COLOR_PAIR(3));
-						mvprintw(iRow += 1, 1, row_trx[16]);
-						attroff(COLOR_PAIR(3));
-					}
+						/* Truncate SQL at ~2 lines */
+						char aQuery[300];
+						unsigned int iQLen = sizeof(aQuery) - 1;
+						strncpy(aQuery, row_trx[16], iQLen);
+						aQuery[iQLen] = '\0';
 
-					attroff(A_BOLD);
+						/* Remove LFs. */
+						replaceChar(aQuery, '\n', ' ');
+
+						wattron(pPad, COLOR_PAIR(2));
+						mvwprintw(pPad, iRow += 1, 1, "%s", aQuery);
+						wattroff(pPad, COLOR_PAIR(2));
+					}
 
 					if (pLogfile != NULL)
 					{
@@ -371,7 +391,7 @@ int main(int iArgCount, char* aArgV[])
 					}
 				}
 
-				iRow += 6;
+				iRow += 2;
 			}
 
 			mysql_free_result(result_trx);
@@ -379,6 +399,19 @@ int main(int iArgCount, char* aArgV[])
 			if (pLogfile != NULL)
 			{
 				fclose(fp);
+			}
+
+			iCh = wgetch(pPad);
+
+			switch (iCh)
+			{
+				case KEY_UP:
+					iPadPos--;
+				break;
+
+				case KEY_DOWN:
+					iPadPos++;
+				break;
 			}
 		}
 		else
@@ -390,10 +423,14 @@ int main(int iArgCount, char* aArgV[])
 
 		refresh();
 
-		mssleep(iTime);
+		prefresh(pPad, iPadPos, 1, 9, 1, iPadHeight, iPadWidth); /* (p, scrollY, scrollX, posY, posX, sizeY, sizeX) */
+
+		msSleep(iTime);
 	}
 
 	curs_set(1);
+
+	delwin(pPad);
 
 	endwin();
 
@@ -517,7 +554,7 @@ unsigned int options(int iArgCount, char* aArgV[])
 	* @return  signed integer
 */
 
-int mssleep(unsigned int ms)
+int msSleep(unsigned int ms)
 {
 	struct timespec rem;
 	struct timespec req =
@@ -527,6 +564,37 @@ int mssleep(unsigned int ms)
 	};
 
 	return nanosleep(&req, &rem);
+}
+
+
+/**
+	* Character replacement to clean multi-line SQL strings.
+	* Credit: Fabio Cabral.
+	*
+	* @param   array aSQL, SQL string
+	* @param   char cOrg, original char
+	* @param   char cRep, replace char
+	* @return  void
+*/
+
+void replaceChar(char* aSQL, char cOrg, char cRep) {
+
+	char* src;
+	char* dst;
+
+	for (src = dst = aSQL; *src != '\0'; src++)
+	{
+		*dst = *src;
+
+		if (*dst == cOrg)
+		{
+			*dst = cRep;
+		}
+
+		dst++;
+	}
+
+	*dst = '\0';
 }
 
 
