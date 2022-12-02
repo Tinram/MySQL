@@ -71,8 +71,17 @@ Visual monitor with the refresh period reduced to 100 milliseconds:
     ./mysqltrxmon -u johndoe -h myserver -t 100
 ```
 
+<br>
+
+Keys:
+
+<kbd>↑</kbd>&nbsp;&nbsp;&nbsp;scroll up
+<br>
+<kbd>↓</kbd>&nbsp;&nbsp;&nbsp;scroll down
 
 <kbd>Ctrl</kbd> + <kbd>C</kbd> to exit.
+
+<br>
 
 
 ## CSV Output
