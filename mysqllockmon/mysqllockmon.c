@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/07/2022
-	* @version       0.16 (from mysqltrxmon)
+	* @version       0.17 (from mysqltrxmon)
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,12 +33,13 @@
 
 
 #define APP_NAME "mysqllockmon"
-#define MB_VERSION "0.16"
+#define MB_VERSION "0.17"
 
 
 void signal_handler(int iSig);
+void replaceChar(char* aSQL, char cOrg, char cRep);
 void menu(char* const pFName);
-int mssleep(unsigned int ms);
+int msSleep(unsigned int ms);
 unsigned int options(int iArgCount, char* aArgV[]);
 
 
@@ -80,7 +81,7 @@ int main(int iArgCount, char* aArgV[])
 	int iRow = 0;
 	int iKey = 0;
 	char cDisplay = 'T'; /* TRX display default. */
-	char aHostname[21];
+	char aHostname[50];
 	char aVersion[7];
 
 	pProgname = aArgV[0];
@@ -272,8 +273,8 @@ int main(int iArgCount, char* aArgV[])
 					performance_schema.events_statements_current stmt USING (THREAD_ID) \
 			");
 
-			MYSQL_RES* result_trx = mysql_store_result(pConn);
-			MYSQL_ROW row_trx;
+			MYSQL_RES* result_q = mysql_store_result(pConn);
+			MYSQL_ROW row_res;
 
 			iRow += 3;
 			attrset(A_BOLD | COLOR_PAIR(2));
@@ -281,11 +282,11 @@ int main(int iArgCount, char* aArgV[])
 			attrset(A_NORMAL);
 			iRow = 12;
 
-			while ((row_trx = mysql_fetch_row(result_trx)))
+			while ((row_res = mysql_fetch_row(result_q)))
 			{
-				if (row_trx != NULL)
+				if (row_res != NULL)
 				{
-					char idx = (strcmp("1", row_trx[8]) == 1) ? 'N' : 'Y'; // NO_INDEX_USED -> reversal
+					char idx = (strcmp("1", row_res[8]) == 1) ? 'N' : 'Y'; // NO_INDEX_USED -> reversal
 
 					mvprintw(iRow, 1, "thd");
 					mvprintw(iRow, 8, "ps");
@@ -304,48 +305,53 @@ int main(int iArgCount, char* aArgV[])
 					attrset(A_BOLD | COLOR_PAIR(1));
 					iRow++;
 
-					mvprintw(iRow, 1, row_trx[0]);
-					mvprintw(iRow, 8, row_trx[1]);
-					mvprintw(iRow, 18, row_trx[2]);
-					mvprintw(iRow, 28, row_trx[3]);
-					mvprintw(iRow, 38, row_trx[4]);
-					mvprintw(iRow, 48, row_trx[5]);
-					mvprintw(iRow, 58, row_trx[6]);
-					mvprintw(iRow, 68, row_trx[7]);
+					mvprintw(iRow, 1, row_res[0]);
+					mvprintw(iRow, 8, row_res[1]);
+					mvprintw(iRow, 18, row_res[2]);
+					mvprintw(iRow, 28, row_res[3]);
+					mvprintw(iRow, 38, row_res[4]);
+					mvprintw(iRow, 48, row_res[5]);
+					mvprintw(iRow, 58, row_res[6]);
+					mvprintw(iRow, 68, row_res[7]);
 					mvprintw(iRow, 78, "%c", idx);
-					mvprintw(iRow, 88, row_trx[9]);
-					mvprintw(iRow, 100, row_trx[10]);
-					mvprintw(iRow, 124, row_trx[11]);
-					mvprintw(iRow, 135, row_trx[12]);
+					mvprintw(iRow, 88, row_res[9]);
+					mvprintw(iRow, 100, row_res[10]);
+					mvprintw(iRow, 124, row_res[11]);
+					mvprintw(iRow, 135, row_res[12]);
 
 					attrset(A_NORMAL);
 					attron(COLOR_PAIR(5));
-					mvprintw(iRow += 2, 1, row_trx[13]);
+					mvprintw(iRow += 2, 1, row_res[13]);
 					attroff(COLOR_PAIR(5));
 
-					attron(A_BOLD);
-
-					if (row_trx[14] != NULL)
+					if (row_res[14] != NULL)
 					{
+						attrset(A_BOLD | COLOR_PAIR(3));
+						mvprintw(iRow += 1, 1, row_res[14]);
+						attrset(A_NORMAL);
+					}
+
+					if (row_res[15] != NULL)
+					{
+						/* Truncate SQL at ~2 lines */
+						char aQuery[300];
+						unsigned int iQLen = sizeof(aQuery) - 1;
+						strncpy(aQuery, row_res[15], iQLen);
+						aQuery[iQLen] = '\0';
+
+						/* Remove LFs. */
+						replaceChar(aQuery, '\n', ' ');
+
 						attron(COLOR_PAIR(2));
-						mvprintw(iRow += 1, 1, row_trx[14]);
+						mvprintw(iRow += 1, 1, "%s", aQuery);
 						attroff(COLOR_PAIR(2));
 					}
-
-					if (row_trx[15] != NULL)
-					{
-						attron(COLOR_PAIR(3));
-						mvprintw(iRow += 1, 1, row_trx[15]);
-						attroff(COLOR_PAIR(3));
-					}
-
-					attroff(A_BOLD);
 				}
 
-				iRow += 6;
+				iRow += 4;
 			}
 
-			mysql_free_result(result_trx);
+			mysql_free_result(result_q);
 		}
 		else if (cDisplay == 'I')
 		{
@@ -356,8 +362,8 @@ int main(int iArgCount, char* aArgV[])
 					sys.innodb_lock_waits \
 			");
 
-			MYSQL_RES* result_trx = mysql_store_result(pConn);
-			MYSQL_ROW row_trx;
+			MYSQL_RES* result_q = mysql_store_result(pConn);
+			MYSQL_ROW row_res;
 
 			iRow += 3;
 			attrset(A_BOLD | COLOR_PAIR(2));
@@ -365,14 +371,14 @@ int main(int iArgCount, char* aArgV[])
 			attrset(A_NORMAL);
 			iRow = 12;
 
-			while ((row_trx = mysql_fetch_row(result_trx)))
+			while ((row_res = mysql_fetch_row(result_q)))
 			{
-				if (row_trx != NULL)
+				if (row_res != NULL)
 				{
 					mvprintw(iRow, 1, "locked table");
 					iRow++;
 					attrset(A_BOLD | COLOR_PAIR(1));
-					mvprintw(iRow, 1, row_trx[1]);
+					mvprintw(iRow, 1, row_res[1]);
 					attrset(A_NORMAL);
 
 					iRow += 2;
@@ -391,42 +397,58 @@ int main(int iArgCount, char* aArgV[])
 					iRow++;
 					attrset(A_BOLD | COLOR_PAIR(1));
 
-					mvprintw(iRow, 1, row_trx[0]);
-					mvprintw(iRow, 10, row_trx[2]);
-					mvprintw(iRow, 24, row_trx[3]);
-					mvprintw(iRow, 37, row_trx[4]);
-					mvprintw(iRow, 47, row_trx[5]);
-					mvprintw(iRow, 57, row_trx[7]);
-					mvprintw(iRow, 67, row_trx[8]);
-					mvprintw(iRow, 77, row_trx[10]);
-					mvprintw(iRow, 87, row_trx[12]);
-					mvprintw(iRow, 100, row_trx[13]);
-					mvprintw(iRow, 111, row_trx[11]);
+					mvprintw(iRow, 1, row_res[0]);
+					mvprintw(iRow, 10, row_res[2]);
+					mvprintw(iRow, 24, row_res[3]);
+					mvprintw(iRow, 37, row_res[4]);
+					mvprintw(iRow, 47, row_res[5]);
+					mvprintw(iRow, 57, row_res[7]);
+					mvprintw(iRow, 67, row_res[8]);
+					mvprintw(iRow, 77, row_res[10]);
+					mvprintw(iRow, 87, row_res[12]);
+					mvprintw(iRow, 100, row_res[13]);
+					mvprintw(iRow, 111, row_res[11]);
 
-					if (row_trx[6] != NULL)
+					if (row_res[6] != NULL)
 					{
+						char aQuery[300];
+						unsigned int iQLen = sizeof(aQuery) - 1;
+						strncpy(aQuery, row_res[6], iQLen);
+						aQuery[iQLen] = '\0';
+
+						/* Remove LFs. */
+						replaceChar(aQuery, '\n', ' ');
+
 						attron(COLOR_PAIR(5));
-						mvprintw(iRow += 2, 1, row_trx[6]);
+						mvprintw(iRow += 2, 1, "%s", aQuery);
 						attroff(COLOR_PAIR(5));
 					}
 
-					if (row_trx[9] != NULL)
+					if (row_res[9] != NULL)
 					{
+						char aQuery[300];
+						unsigned int iQLen = sizeof(aQuery) - 1;
+						strncpy(aQuery, row_res[9], iQLen);
+						aQuery[iQLen] = '\0';
+
+						/* Remove LFs. */
+						replaceChar(aQuery, '\n', ' ');
+
 						attron(COLOR_PAIR(5));
-						mvprintw(iRow += 1, 1, row_trx[9]);
+						mvprintw(iRow += 1, 1, "%s", aQuery);
 						attroff(COLOR_PAIR(5));
 					}
 
 					attrset(A_NORMAL);
 					attron(COLOR_PAIR(5));
-					mvprintw(iRow += 1, 1, row_trx[14]);
+					mvprintw(iRow += 1, 1, row_res[14]);
 					attroff(COLOR_PAIR(5));
 				}
 
 				iRow += 3;
 			}
 
-			mysql_free_result(result_trx);
+			mysql_free_result(result_q);
 		}
 		else if (cDisplay == 'L')
 		{
@@ -444,8 +466,8 @@ int main(int iArgCount, char* aArgV[])
 					sys.schema_table_lock_waits \
 			");
 
-			MYSQL_RES* result_trx = mysql_store_result(pConn);
-			MYSQL_ROW row_trx;
+			MYSQL_RES* result_q = mysql_store_result(pConn);
+			MYSQL_ROW row_res;
 
 			iRow += 3;
 			attrset(A_BOLD | COLOR_PAIR(2));
@@ -453,16 +475,16 @@ int main(int iArgCount, char* aArgV[])
 			attrset(A_NORMAL);
 			iRow = 12;
 
-			while ((row_trx = mysql_fetch_row(result_trx)))
+			while ((row_res = mysql_fetch_row(result_q)))
 			{
-				if (row_trx != NULL)
+				if (row_res != NULL)
 				{
 					mvprintw(iRow, 1, "db");
 					mvprintw(iRow, 22, "table");
 					iRow++;
 					attrset(A_BOLD | COLOR_PAIR(1));
-					mvprintw(iRow, 1, row_trx[0]);
-					mvprintw(iRow, 22, row_trx[1]);
+					mvprintw(iRow, 1, row_res[0]);
+					mvprintw(iRow, 22, row_res[1]);
 					attrset(A_NORMAL);
 
 					iRow += 2;
@@ -480,35 +502,43 @@ int main(int iArgCount, char* aArgV[])
 					iRow++;
 					attrset(A_BOLD | COLOR_PAIR(1));
 
-					mvprintw(iRow, 1, row_trx[2]);
-					mvprintw(iRow, 22, row_trx[3]);
-					mvprintw(iRow, 46, row_trx[4]);
-					mvprintw(iRow, 62, row_trx[6]);
-					(row_trx[7] != NULL) ? mvprintw(iRow, 70, row_trx[7]) : mvprintw(iRow, 70, "-");
-					(row_trx[8] != NULL) ? mvprintw(iRow, 79, row_trx[8]) : mvprintw(iRow, 79, "-");
-					mvprintw(iRow, 89, row_trx[9]);
-					mvprintw(iRow, 97, row_trx[10]);
-					mvprintw(iRow, 119, row_trx[11]);
-					mvprintw(iRow, 138, row_trx[12]);
+					mvprintw(iRow, 1, row_res[2]);
+					mvprintw(iRow, 22, row_res[3]);
+					mvprintw(iRow, 46, row_res[4]);
+					mvprintw(iRow, 62, row_res[6]);
+					(row_res[7] != NULL) ? mvprintw(iRow, 70, row_res[7]) : mvprintw(iRow, 70, "-");
+					(row_res[8] != NULL) ? mvprintw(iRow, 79, row_res[8]) : mvprintw(iRow, 79, "-");
+					mvprintw(iRow, 89, row_res[9]);
+					mvprintw(iRow, 97, row_res[10]);
+					mvprintw(iRow, 119, row_res[11]);
+					mvprintw(iRow, 138, row_res[12]);
 
-					if (row_trx[5] != NULL)
+					if (row_res[5] != NULL)
 					{
+						char aQuery[300];
+						unsigned int iQLen = sizeof(aQuery) - 1;
+						strncpy(aQuery, row_res[5], iQLen);
+						aQuery[iQLen] = '\0';
+
+						/* Remove LFs. */
+						replaceChar(aQuery, '\n', ' ');
+
 						attron(COLOR_PAIR(5));
-						mvprintw(iRow += 2, 1, row_trx[5]);
+						mvprintw(iRow += 2, 1, "%s", aQuery);
 						attroff(COLOR_PAIR(5));
 					}
 
 					attrset(A_NORMAL);
 
 					attron(COLOR_PAIR(5));
-					mvprintw(iRow += 1, 1, row_trx[13]);
+					mvprintw(iRow += 1, 1, row_res[13]);
 					attroff(COLOR_PAIR(5));
 				}
 
 				iRow += 3;
 			}
 
-			mysql_free_result(result_trx);
+			mysql_free_result(result_q);
 		}
 		else if (cDisplay == 'M')
 		{
@@ -531,8 +561,8 @@ int main(int iArgCount, char* aArgV[])
 				");
 					/* Join on sys.session is simply too expensive: 50 QPS >> 2500+ QPS */
 
-				MYSQL_RES* result_trx = mysql_store_result(pConn);
-				MYSQL_ROW row_trx;
+				MYSQL_RES* result_q = mysql_store_result(pConn);
+				MYSQL_ROW row_res;
 
 				iRow += 3;
 				attrset(A_BOLD | COLOR_PAIR(2));
@@ -540,9 +570,9 @@ int main(int iArgCount, char* aArgV[])
 				attrset(A_NORMAL);
 				iRow = 12;
 
-				while ((row_trx = mysql_fetch_row(result_trx)))
+				while ((row_res = mysql_fetch_row(result_q)))
 				{
-					if (row_trx != NULL)
+					if (row_res != NULL)
 					{
 						mvprintw(iRow, 1, "db");
 						mvprintw(iRow, 22, "table");
@@ -555,13 +585,13 @@ int main(int iArgCount, char* aArgV[])
 						iRow++;
 						attrset(A_BOLD | COLOR_PAIR(1));
 
-						(row_trx[1] != NULL) ? mvprintw(iRow, 1, row_trx[1]) : mvprintw(iRow, 1, "-");
-						(row_trx[2] != NULL) ? mvprintw(iRow, 22, row_trx[2]) : mvprintw(iRow, 22, "-");
-						mvprintw(iRow, 45, row_trx[0]);
-						mvprintw(iRow, 65, row_trx[3]);
-						mvprintw(iRow, 95, row_trx[4]);
-						mvprintw(iRow, 115, row_trx[5]);
-						mvprintw(iRow, 130, row_trx[6]);
+						(row_res[1] != NULL) ? mvprintw(iRow, 1, row_res[1]) : mvprintw(iRow, 1, "-");
+						(row_res[2] != NULL) ? mvprintw(iRow, 22, row_res[2]) : mvprintw(iRow, 22, "-");
+						mvprintw(iRow, 45, row_res[0]);
+						mvprintw(iRow, 65, row_res[3]);
+						mvprintw(iRow, 95, row_res[4]);
+						mvprintw(iRow, 115, row_res[5]);
+						mvprintw(iRow, 130, row_res[6]);
 
 						attrset(A_NORMAL);
 					}
@@ -569,7 +599,7 @@ int main(int iArgCount, char* aArgV[])
 					iRow += 2;
 				}
 
-				mysql_free_result(result_trx);
+				mysql_free_result(result_q);
 			}
 			else /* v.8.0+ */
 			{
@@ -584,8 +614,8 @@ int main(int iArgCount, char* aArgV[])
 						ML.OBJECT_SCHEMA NOT IN ('information_schema', 'mysql', 'performance_schema') \
 				");
 
-				MYSQL_RES* result_trx = mysql_store_result(pConn);
-				MYSQL_ROW row_trx;
+				MYSQL_RES* result_q = mysql_store_result(pConn);
+				MYSQL_ROW row_res;
 
 				iRow += 3;
 				attrset(A_BOLD | COLOR_PAIR(2));
@@ -593,9 +623,9 @@ int main(int iArgCount, char* aArgV[])
 				attrset(A_NORMAL);
 				iRow = 12;
 
-				while ((row_trx = mysql_fetch_row(result_trx)))
+				while ((row_res = mysql_fetch_row(result_q)))
 				{
-					if (row_trx != NULL)
+					if (row_res != NULL)
 					{
 						mvprintw(iRow, 1, "db");
 						mvprintw(iRow, 22, "table");
@@ -610,15 +640,15 @@ int main(int iArgCount, char* aArgV[])
 						iRow++;
 						attrset(A_BOLD | COLOR_PAIR(1));
 
-						(row_trx[1] != NULL) ? mvprintw(iRow, 1, row_trx[1]) : mvprintw(iRow, 1, "-");
-						(row_trx[2] != NULL) ? mvprintw(iRow, 22, row_trx[2]) : mvprintw(iRow, 22, "-");
-						mvprintw(iRow, 40, row_trx[0]);
-						mvprintw(iRow, 53, row_trx[3]);
-						(row_trx[4] != NULL) ? mvprintw(iRow, 76, row_trx[4]) : mvprintw(iRow, 76, "-");
-						(row_trx[5] != NULL) ? mvprintw(iRow, 98, row_trx[5]) : mvprintw(iRow, 98, "-");
-						mvprintw(iRow, 109, row_trx[6]);
-						(row_trx[7] != NULL) ? mvprintw(iRow, 124, row_trx[7]) : mvprintw(iRow, 124, "-");
-						mvprintw(iRow, 136, row_trx[8]);
+						(row_res[1] != NULL) ? mvprintw(iRow, 1, row_res[1]) : mvprintw(iRow, 1, "-");
+						(row_res[2] != NULL) ? mvprintw(iRow, 22, row_res[2]) : mvprintw(iRow, 22, "-");
+						mvprintw(iRow, 40, row_res[0]);
+						mvprintw(iRow, 53, row_res[3]);
+						(row_res[4] != NULL) ? mvprintw(iRow, 76, row_res[4]) : mvprintw(iRow, 76, "-");
+						(row_res[5] != NULL) ? mvprintw(iRow, 98, row_res[5]) : mvprintw(iRow, 98, "-");
+						mvprintw(iRow, 109, row_res[6]);
+						(row_res[7] != NULL) ? mvprintw(iRow, 124, row_res[7]) : mvprintw(iRow, 124, "-");
+						mvprintw(iRow, 136, row_res[8]);
 
 						attrset(A_NORMAL);
 					}
@@ -626,13 +656,13 @@ int main(int iArgCount, char* aArgV[])
 					iRow += 2;
 				}
 
-				mysql_free_result(result_trx);
+				mysql_free_result(result_q);
 			}
 		}
 
 		refresh();
 
-		mssleep(iTime);
+		msSleep(iTime);
 	}
 
 	curs_set(1);
@@ -755,7 +785,7 @@ unsigned int options(int iArgCount, char* aArgV[])
 	* @return  signed integer
 */
 
-int mssleep(unsigned int ms)
+int msSleep(unsigned int ms)
 {
 	struct timespec rem;
 	struct timespec req =
@@ -765,6 +795,37 @@ int mssleep(unsigned int ms)
 	};
 
 	return nanosleep(&req, &rem);
+}
+
+
+/**
+	* Character replacement to clean multi-line SQL strings.
+	* Credit: Fabio Cabral.
+	*
+	* @param   array aSQL, SQL string
+	* @param   char cOrg, original char
+	* @param   char cRep, replace char
+	* @return  void
+*/
+
+void replaceChar(char* aSQL, char cOrg, char cRep) {
+
+	char* src;
+	char* dst;
+
+	for (src = dst = aSQL; *src != '\0'; src++)
+	{
+		*dst = *src;
+
+		if (*dst == cOrg)
+		{
+			*dst = cRep;
+		}
+
+		dst++;
+	}
+
+	*dst = '\0';
 }
 
 
