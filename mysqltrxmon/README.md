@@ -3,7 +3,14 @@
 
 #### MySQL Transaction Monitor.
 
+
 <br>
+
+[1]: https://tinram.github.io/images/mysqltrxmon.gif
+![mysqltrxmon][1]
+
+<br>
+
 
 ## Purpose
 
@@ -79,7 +86,7 @@ Keys:
 <br>
 <kbd>↓</kbd>&nbsp;&nbsp;&nbsp;scroll down
 
-<kbd>Ctrl</kbd> + <kbd>C</kbd> to exit.
+<kbd>Ctrl</kbd> + <kbd>C</kbd>&nbsp;&nbsp;&nbsp;exit
 
 <br>
 
