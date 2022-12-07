@@ -8,14 +8,14 @@
 #
 # author      Martin Latter
 # copyright   Martin Latter 24/11/2016
-# version     0.25
+# version     0.26
 # license     GNU GPL version 3.0 (GPL v3); http://www.gnu.org/licenses/gpl.html
 # link        https://github.com/Tinram/MySQL.git
 
 
 name="mysql_vars"
-version="v.0.25"
-date="20210920"
+version="v.0.26"
+date="20221207"
 mysqlPort="3306" # for remote host not listening on 3306; for 'localhost' MySQL connects with sockets (override: 127.0.0.1)
 scriptName=$0
 declare -i v8=0
@@ -44,13 +44,13 @@ main()
 	echo -n "password: "
 	read -sr mysqlPass
 
-	if [[ ! $mysqlHost ]]; then
+	if [[ ! "$mysqlHost" ]]; then
 		mysqlHost="localhost"
 	fi
 
-	read v1 v2 v3 v4 <<< $(mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "SHOW VARIABLES WHERE variable_name = 'innodb_version'" 2>/dev/null)
+	read -r v1 mysqlVersion <<< $(mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -se "SHOW VARIABLES WHERE variable_name = 'innodb_version'" 2>/dev/null)
 
-	if [[ ${v4::1} > 5 ]]; then
+	if [[ ${mysqlVersion::1} -gt 5 ]]; then
 		v8=1
 	fi
 
@@ -90,7 +90,7 @@ main()
 		SHOW VARIABLES WHERE variable_name = 'slow_launch_time';
 		SHOW STATUS WHERE variable_name ='Slow_launch_threads'" 2>/dev/null
 
-	if [[ $v8 == 1 ]]; then
+	if [[ "$v8" == 1 ]]; then
 		echo -e "\n\n~~ THREADPOOL (v.8 Enterprise) ~~\n"
 		mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 			SHOW VARIABLES WHERE variable_name = 'thread_pool_size';
@@ -153,7 +153,7 @@ main()
 	#mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 	#SHOW ENGINE INNODB STATUS\G";
 
-	if [[ $v8 == 1 ]]; then
+	if [[ "$v8" == 1 ]]; then
 		echo -e "\n\n~~ INNODB (v.8) ~~\n"
 		mysql -u"$mysqlUser" -p"$mysqlPass" -h"$mysqlHost" -P"$mysqlPort" -e "
 			SHOW VARIABLES WHERE variable_name = 'innodb_dedicated_server';
