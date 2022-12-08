@@ -12,6 +12,7 @@
 
 #### Scripts
 
++ [db\_copy.sh](#dbcopy) &ndash; copy a database between servers
 + [mysql\_vars.sh](#mysqlvars) &ndash; variable display
 + [mysql\_varmon.sh](#mysqlvarmon) &ndash; variable monitor
 + [mysql\_grants.sh](#mysqlgrants)
@@ -25,17 +26,45 @@
 ---
 
 
+<a id="db_copy"></a>
+## *db_copy.sh*
+
+
+### Purpose
+
++ Copy a MySQL database between servers via *mysqlpump* (or *mysqldump*) and the PC, attempting to preserve character set and collations of the source database.
++ Avoids the human time / hassle of manual *mysqlpump* export file and reload, plus character set amnesia for migration.
++ Created to circumvent the flaky operation of *mysql-utilities*' *mysqldbcopy* (1.6.1).
+
+
+### Set-up
+
+```bash
+    chmod 744 db_copy.sh
+```
+
+
+### Usage
+
+```bash
+    ./db_copy.sh
+```
+
+&ndash; prompts for credentials of the MySQL servers and source database.
+
+
+---
+
+
 <a id="mysqlvars"></a>
 ## *mysql_vars.sh*
 
 
 ### Purpose
 
-Display important MySQL server variables and counters.
-
-Uses Bash for server portability.
-
-Output can be easily be diffed to compare servers.
++ Display important MySQL server variables and counters.
++ Uses Bash for server portability.
++ Output can be easily be diff'd to compare servers.
 
 
 ### Set-up
