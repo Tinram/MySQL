@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.22
+	* @version       0.23
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQLTrxMon"
-#define MB_VERSION "0.22"
+#define MB_VERSION "0.23"
 
 
 void signal_handler(int iSig);
@@ -292,18 +292,18 @@ int main(int iArgCount, char* aArgV[])
 			iRow = 8;
 
 			mvprintw(iRow, 1, "thd");
-			mvprintw(iRow, 8, "ps");
-			mvprintw(iRow, 16, "exm");
-			mvprintw(iRow, 28, "lock");
-			mvprintw(iRow, 42, "mod");
-			mvprintw(iRow, 53, "afft");
-			mvprintw(iRow, 64, "tmpd");
-			mvprintw(iRow, 73, "tlk");
-			mvprintw(iRow, 81, "idx");
-			mvprintw(iRow, 89, "wait");
-			mvprintw(iRow, 101, "start");
-			mvprintw(iRow, 126, "sec");
-			mvprintw(iRow, 136, "user");
+			mvprintw(iRow, 10, "ps");
+			mvprintw(iRow, 20, "exm");
+			mvprintw(iRow, 33, "lock");
+			mvprintw(iRow, 46, "mod");
+			mvprintw(iRow, 57, "afft");
+			mvprintw(iRow, 68, "tmpd");
+			mvprintw(iRow, 77, "tlk");
+			mvprintw(iRow, 85, "idx");
+			mvprintw(iRow, 93, "wait");
+			mvprintw(iRow, 107, "start");
+			mvprintw(iRow, 130, "sec");
+			mvprintw(iRow, 140, "user");
 
 			mysql_query(pConn, "\
 				SELECT \
@@ -344,18 +344,18 @@ int main(int iArgCount, char* aArgV[])
 
 					wattrset(pPad, A_BOLD | COLOR_PAIR(1));
 					mvwprintw(pPad, iRow, 1, row_trx[1]);
-					mvwprintw(pPad, iRow, 8, row_trx[2]);
-					mvwprintw(pPad, iRow, 16, row_trx[3]);
-					mvwprintw(pPad, iRow, 28, row_trx[4]);
-					mvwprintw(pPad, iRow, 42, row_trx[5]);
-					mvwprintw(pPad, iRow, 53, row_trx[6]);
-					mvwprintw(pPad, iRow, 64, row_trx[7]);
-					mvwprintw(pPad, iRow, 73, row_trx[8]);
-					mvwprintw(pPad, iRow, 81, "%c", idx);
-					mvwprintw(pPad, iRow, 89, row_trx[10]);
-					mvwprintw(pPad, iRow, 101, row_trx[11]);
-					mvwprintw(pPad, iRow, 126, row_trx[12]);
-					mvwprintw(pPad, iRow, 136, row_trx[13]);
+					mvwprintw(pPad, iRow, 10, row_trx[2]);
+					mvwprintw(pPad, iRow, 20, row_trx[3]);
+					mvwprintw(pPad, iRow, 33, row_trx[4]);
+					mvwprintw(pPad, iRow, 46, row_trx[5]);
+					mvwprintw(pPad, iRow, 57, row_trx[6]);
+					mvwprintw(pPad, iRow, 68, row_trx[7]);
+					mvwprintw(pPad, iRow, 77, row_trx[8]);
+					mvwprintw(pPad, iRow, 85, "%c", idx);
+					mvwprintw(pPad, iRow, 93, row_trx[10]);
+					mvwprintw(pPad, iRow, 107, row_trx[11]);
+					mvwprintw(pPad, iRow, 130, row_trx[12]);
+					mvwprintw(pPad, iRow, 140, row_trx[13]);
 					wattrset(pPad, A_NORMAL);
 
 					wattron(pPad, COLOR_PAIR(5));
