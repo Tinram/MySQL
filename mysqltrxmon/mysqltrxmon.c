@@ -85,7 +85,7 @@ int main(int iArgCount, char* aArgV[])
 	unsigned int iAccess = 0;
 	unsigned int iMaria = 0;
 	unsigned int iAurora = 0;
-	unsigned int iPadWidth = 157; // 160 for 13" MacBook
+	unsigned int iPadWidth = 157; // 164 for 13" MacBook
 	unsigned int iPadHeight = 35; // 30-50; fullscreen terminal differs to windowed
 	int iRow = 0;
 	int iCh;
