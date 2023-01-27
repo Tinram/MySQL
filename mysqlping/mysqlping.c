@@ -1,19 +1,17 @@
 
 /**
-	* MySQL Ping
+	* MySQL Pinger
 	* mysqlping.c
-	*
-	* MySQL pinger from C API.
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 02/09/2020
-	* @version       0.06
+	* @version       0.07
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
 	* Compile:
 	* (Linux GCC x64)
-	*                required dependency: libmysqlclient-dev
+	*                Required dependency: libmysqlclient-dev
 	*                gcc mysqlping.c $(mysql_config --cflags) $(mysql_config --libs) -o mysqlping -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -Wformat=2 -Wunused-parameter -Wshadow -Wstrict-prototypes -Wold-style-definition -Wredundant-decls -Wnested-externs -Wmissing-include-dirs -Wformat-security -std=gnu99 -s
 	*
 	* Usage:
@@ -22,23 +20,24 @@
 */
 
 
+#include <signal.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
-#include <getopt.h>
-#include <signal.h>
-#include <mysql.h>
 #include <unistd.h>
 
+#include <getopt.h>
+#include <mysql.h>
 
-#define APP_NAME "MySQL Ping"
-#define MB_VERSION "0.06"
+
+#define APP_NAME "MySQLPing"
+#define MB_VERSION "0.07"
 
 
+void signal_handler(int sig);
 void menu(char* const pFName);
 unsigned int options(int iArgCount, char* aArgV[]);
-void signal_handler(int sig);
 
 
 char* pHost = NULL;
@@ -50,7 +49,14 @@ unsigned int iFlood = 0; // ping flood flag
 unsigned int iSigCaught = 0;
 
 
-/* based on an example by Greg Kemnitz */
+/**
+	* Sigint handling.
+	* Based on example by Greg Kemnitz.
+	*
+	* @param   integer iSig
+	* @return  void
+*/
+
 void signal_handler(int iSig)
 {
 	if (iSig == SIGINT)
@@ -91,9 +97,11 @@ int main(int iArgCount, char* aArgV[])
 		return EXIT_FAILURE;
 	}
 
+	mysql_options4(pConn, MYSQL_OPT_CONNECT_ATTR_ADD, "program_name", APP_NAME);
+
 	if (mysql_real_connect(pConn, pHost, pUser, pPassword, NULL, iPort, NULL, 0) == NULL)
 	{
-		fprintf(stderr, "\nCannot connect to MySQL server.\n\n");
+		fprintf(stderr, "\nCannot connect to MySQL server.\n(Error: %s)\n\n", mysql_error(pConn));
 		return EXIT_FAILURE;
 	}
 	else
@@ -103,7 +111,7 @@ int main(int iArgCount, char* aArgV[])
 
 	unsigned int iCounter = 0;
 
-	while (!iSigCaught)
+	while ( ! iSigCaught)
 	{
 		int iR = mysql_ping(pConn);
 
