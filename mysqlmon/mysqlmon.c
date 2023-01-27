@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.24
+	* @version       0.25
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -34,7 +34,7 @@
 
 
 #define APP_NAME "MySQLMon"
-#define MB_VERSION "0.24"
+#define MB_VERSION "0.25"
 
 
 void signal_handler(int iSig);
@@ -105,6 +105,8 @@ int main(int iArgCount, char* aArgV[])
 		fprintf(stderr, "\nCannot initialise MySQL connector.\n\n");
 		return EXIT_FAILURE;
 	}
+
+	mysql_options4(pConn, MYSQL_OPT_CONNECT_ATTR_ADD, "program_name", APP_NAME);
 
 	if (mysql_real_connect(pConn, pHost, pUser, pPassword, NULL, iPort, NULL, 0) == NULL)
 	{
