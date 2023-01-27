@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/07/2022
-	* @version       0.17 (from mysqltrxmon)
+	* @version       0.18 (from mysqltrxmon)
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "mysqllockmon"
-#define MB_VERSION "0.17"
+#define MB_VERSION "0.18"
 
 
 void signal_handler(int iSig);
@@ -109,8 +109,9 @@ int main(int iArgCount, char* aArgV[])
 		return EXIT_FAILURE;
 	}
 
+	mysql_options4(pConn, MYSQL_OPT_CONNECT_ATTR_ADD, "program_name", APP_NAME);
 	//mysql_options(pConn, MYSQL_INIT_COMMAND, "SET autocommit=0");
-	//mysql_options(pConn, MYSQL_OPT_COMPRESS);
+	//mysql_options(pConn, MYSQL_OPT_COMPRESS, 0);
 
 	if (mysql_real_connect(pConn, pHost, pUser, pPassword, NULL, iPort, NULL, 0) == NULL)
 	{
