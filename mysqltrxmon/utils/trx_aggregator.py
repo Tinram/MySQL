@@ -7,7 +7,7 @@
 
     Author         Martin Latter
     Copyright      Martin Latter 16/08/2022
-    Version        0.02
+    Version        0.03
     License        GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
     Link           https://github.com/Tinram/MySQL.git
 """
@@ -44,7 +44,7 @@ with open(ARGS.filename, encoding='utf-8', mode='r') as f:
         TRXS.append(row)
 
 
-# CSV: trx|thd|ps|exm|lock|mod|afft|tmpd|tlock|noidx|wait|start|secs|user|trxstate|trxopstate|query
+# CSV: trx|thd|ps|exm|lock|mod|afft|tmpd|tlock|noidx|wait|start|secs|user|program|trxstate|trxopstate|query
 
 # sort by trx id
 TRXS = sorted(TRXS, key=itemgetter('trx'))
@@ -61,9 +61,10 @@ for trx_id, stats in groupby(TRXS, key=itemgetter('trx')):
         'tlk\t' +
         'idx\t' +
         'start\t\t\t' +
-        'wait\t' +
+        'wait\t\t' +
         'secs\t' +
-        'user'
+        'user\t' +
+        'program'
     )
 
     for stat in stats:
@@ -78,6 +79,7 @@ for trx_id, stats in groupby(TRXS, key=itemgetter('trx')):
             stat['wait'] + '\t' +
             stat['secs'] + '\t' +
             stat['user'] + '\t' +
+            stat['program'] + '\t\t' +
             stat['trxstate'] + '\t\t' +
             stat['trxopstate'] + '\t'
         )
