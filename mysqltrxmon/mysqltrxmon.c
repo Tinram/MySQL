@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.24
+	* @version       0.25
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQLTrxMon"
-#define MB_VERSION "0.24"
+#define MB_VERSION "0.25"
 
 
 void signal_handler(int iSig);
@@ -120,7 +120,7 @@ int main(int iArgCount, char* aArgV[])
 
 	if (mysql_real_connect(pConn, pHost, pUser, pPassword, NULL, iPort, NULL, 0) == NULL)
 	{
-		fprintf(stderr, "\nCannot connect to MySQL server.\n\n");
+		fprintf(stderr, "\nCannot connect to MySQL server.\n(Error: %s)\n\n", mysql_error(pConn));
 		return EXIT_FAILURE;
 	}
 
