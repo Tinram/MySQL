@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/07/2022
-	* @version       0.19 (from mysqltrxmon)
+	* @version       0.20 (from mysqltrxmon)
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQLLockMon"
-#define MB_VERSION "0.19"
+#define MB_VERSION "0.20"
 
 
 void signal_handler(int iSig);
@@ -520,7 +520,8 @@ int main(int iArgCount, char* aArgV[])
 						strncpy(aQuery, row_res[5], iQLen);
 						aQuery[iQLen] = '\0';
 
-						/* Remove LFs. */
+						/* Replace TABs and LFs. */
+						replaceChar(aQuery, '\t', ' ');
 						replaceChar(aQuery, '\n', ' ');
 
 						attron(COLOR_PAIR(5));
