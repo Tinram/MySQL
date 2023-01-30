@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.26
+	* @version       0.27
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQLTrxMon"
-#define MB_VERSION "0.26"
+#define MB_VERSION "0.27"
 
 
 void signal_handler(int iSig);
@@ -321,6 +321,7 @@ int main(int iArgCount, char* aArgV[])
 				ORDER BY \
 					duration DESC \
 			");
+				/* left join for Aurora 2.10 */
 
 			MYSQL_RES* result_trx = mysql_store_result(pConn);
 			MYSQL_ROW row_trx;
@@ -390,7 +391,8 @@ int main(int iArgCount, char* aArgV[])
 						strncpy(aQuery, row_trx[16], iQLen);
 						aQuery[iQLen] = '\0';
 
-						/* Remove LFs. */
+						/* Replace TABs and LFs. */
+						replaceChar(aQuery, '\t', ' ');
 						replaceChar(aQuery, '\n', ' ');
 
 						wattron(pPad, COLOR_PAIR(2));
