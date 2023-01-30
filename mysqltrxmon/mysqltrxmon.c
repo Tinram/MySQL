@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.25
+	* @version       0.26
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQLTrxMon"
-#define MB_VERSION "0.25"
+#define MB_VERSION "0.26"
 
 
 void signal_handler(int iSig);
@@ -316,7 +316,7 @@ int main(int iArgCount, char* aArgV[])
 					performance_schema.threads thd ON thd.PROCESSLIST_ID = trx.trx_mysql_thread_id \
 				INNER JOIN \
 					performance_schema.events_statements_current stmt USING (THREAD_ID) \
-				INNER JOIN \
+				LEFT JOIN \
 					performance_schema.session_connect_attrs sca ON sca.PROCESSLIST_ID = trx.trx_mysql_thread_id AND sca.ATTR_NAME = 'program_name' \
 				ORDER BY \
 					duration DESC \
