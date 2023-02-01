@@ -19,14 +19,16 @@
 + [schema\_cleaner.php](#schemacleaner) &ndash; schema file clarifier
 + [schema\_summary.php](#schemasummary) &ndash; schema file info extractor
 + [schema\_splitter.php](#schemasplitter)
++ [sys\_perf\_search.py](#sysperfsearch) &ndash; search internal schemas for keywords
 + [table\_bench/table\_bench.php](#tablebench) &ndash; insert timer
 + [table\_sizer.php](#tablesizer)
+
 
 
 ---
 
 
-<a id="db_copy"></a>
+<a id="dbcopy"></a>
 ## *db_copy.sh*
 
 
@@ -178,6 +180,7 @@ PHP CLI script to reduce and clarify a schema definition file from *mysqldump* (
 
 ---
 
+
 <a id="schemasummary"></a>
 ## *schema_summary.php*
 
@@ -224,6 +227,29 @@ example:
 
 ```bash
     php schema_tools/schema_splitter.php ../schema_example/dbfilltest.sql
+```
+
+
+---
+
+
+<a id="sysperfsearch"></a>
+## *sys_perf_search.py*
+
+
+### Purpose
+
+PHP CLI script to split a large MySQL schema file by table definitions into separate *.sql* files.
+
+Search Performance Schema, Sys schema, or Information Schema for keywords in table names and table fields.
+
+
+### Usage
+
+Edit MySQL instance connection credentials and search keyword in the script's *CONFIGURATION* section.
+
+```bash
+    python3 sys_perf_search.py
 ```
 
 
