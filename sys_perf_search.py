@@ -7,7 +7,7 @@
 
     Author:  Martin Latter
     Date:    07/02/2022
-    Version: 0.04
+    Version: 0.05
 
     Py req:  MySQLdb
              pip3 install mysqlclient
@@ -18,7 +18,6 @@
 
 import sys
 import MySQLdb
-import MySQLdb.cursors
 
 
 #################################################################################
@@ -27,7 +26,7 @@ import MySQLdb.cursors
 
 USER = '<username>'
 PASS = '<password>'
-HOST = 'localhost'
+HOST = '<host>'
 
 ##
 
@@ -37,7 +36,8 @@ DB = 'performance_schema'
 KEYWORD = 'transaction'
 # case-insensitive search term
 
-# see https://github.com/mysql/mysql-sys for sys documetation
+
+""" sys documentation: https://github.com/mysql/mysql-sys """
 
 #################################################################################
 
