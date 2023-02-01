@@ -2,11 +2,12 @@
 # -*- coding: utf-8 -*-
 
 """
-    Parse and search MySQL Sys and Performance Schema for keyword information.
+    Parse and search MySQL Sys and Performance Schema
+    for keywords in table names and table fields.
 
     Author:  Martin Latter
     Date:    07/02/2022
-    Version: 0.03
+    Version: 0.04
 
     Py req:  MySQLdb
              pip3 install mysqlclient
@@ -30,12 +31,13 @@ HOST = 'localhost'
 
 ##
 
-DB = 'performance_schema'    # performance_schema or sys
+DB = 'performance_schema'
+# performance_schema | sys | information_schema
 
-FIND_WITHIN_TABLES = True    # find within table columns or in table name
-TO_FIND = 'USER'             # case-sensitive search term
+KEYWORD = 'transaction'
+# case-insensitive search term
 
-# see https://github.com/mysql/mysql-sys for sys doc
+# see https://github.com/mysql/mysql-sys for sys documetation
 
 #################################################################################
 
@@ -51,7 +53,8 @@ def main():
         sys.exit(1)
 
     results = ()
-    tables = []
+    table_fields = []
+    table_names = []
 
     tables_query = """
         SELECT
@@ -66,33 +69,30 @@ def main():
         cursor.execute(tables_query)
         results = cursor.fetchall()
 
-    if FIND_WITHIN_TABLES:
-        for row in results:
-            tables.append(row[0])
-    else:
-        for row in results:
-            if TO_FIND in row[0] and '$' not in row[0]:
-                tables.append(row[0])
+    for row in results:
+        if 'x$' not in row[0]:
+            table_fields.append(row[0])
+            if KEYWORD.lower() in row[0].lower():
+                table_names.append(row[0])
 
-    print(DB + '\n')
+    print('\n' + str.upper(DB) + '\n\n\t' + 'search: ' + KEYWORD + '\n\n')
 
     with conn.cursor() as cursor:
-        for table in tables:
+        for table in table_fields:
             cursor.execute('EXPLAIN ' + table)
             results = cursor.fetchall()
+            for row in results:
+                if KEYWORD.lower() in row[0].lower():
+                    print('\n' + table + '\n')
+                    for row in results:
+                        print('\t' + str(row))
+                    print('\n')
+                    break
 
-            if FIND_WITHIN_TABLES:
-                for row in results:
-                    if TO_FIND in row:
-                        print(table)
-                        for row2 in results:
-                            print('\t' + str(row2))
-                        print('\n')
-            else:
-                print(table)
-                for row in results:
-                    print('\t' + str(row))
-                print('\n')
+        if table_names:
+            print('\ntable names:\n')
+            for table in table_names:
+                print('\t' + table + '\n')
 
     conn.close()
 
