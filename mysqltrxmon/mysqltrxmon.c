@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.27
+	* @version       0.28
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,14 +33,14 @@
 
 
 #define APP_NAME "MySQLTrxMon"
-#define MB_VERSION "0.27"
+#define MB_VERSION "0.28"
 
 
 void signal_handler(int iSig);
-void replaceChar(char* aSQL, char cOrg, char cRep);
-void menu(char* const pFName);
-int msSleep(unsigned int ms);
 unsigned int options(int iArgCount, char* aArgV[]);
+int msSleep(unsigned int ms);
+void replaceChar(char* aSQL, char const pOrg, char const pRep);
+void menu(char* const pFName);
 
 
 char* pHost = NULL;
@@ -48,38 +48,24 @@ char* pUser = NULL;
 char* pPassword = NULL;
 char* pLogfile = NULL;
 char* pProgname = NULL;
-const char* pRoot = "root";
+char* const pRoot = "root";
+unsigned int iSigCaught = 0;
 unsigned int iPort = 3306;
 unsigned int iTime = 250; // millisecs
-unsigned int iSigCaught = 0;
-
-
-/**
-	* Sigint handling.
-	* Based on example by Greg Kemnitz.
-	*
-	* @param   integer iSig
-	* @return  void
-*/
-
-void signal_handler(int iSig)
-{
-	if (iSig == SIGINT || iSig == SIGTERM || iSig == SIGSEGV)
-	{
-		iSigCaught = 1;
-	}
-}
 
 
 int main(int iArgCount, char* aArgV[])
 {
 	MYSQL* pConn;
 	FILE* fp;
-	const char* pMaria = "MariaDB";
+	char* const pMaria = "MariaDB";
 	char aHostname[50];
 	char aVersion[7];
 	char aAuroraVersion[9];
 	char aAuroraServerId[50];
+	int iRow = 0;
+	int iCh;
+	int iPadPos = 0;
 	unsigned int iMenu = options(iArgCount, aArgV);
 	unsigned int iPS = 0;
 	unsigned int iAccess = 0;
@@ -87,9 +73,6 @@ int main(int iArgCount, char* aArgV[])
 	unsigned int iAurora = 0;
 	unsigned int iPadWidth = 157; // 164 for 13" MacBook
 	unsigned int iPadHeight = 35; // 30-50; fullscreen terminal differs to windowed
-	int iRow = 0;
-	int iCh;
-	int iPadPos = 0;
 
 	pProgname = aArgV[0];
 
@@ -256,7 +239,7 @@ int main(int iArgCount, char* aArgV[])
 			mvprintw(iRow += 1, 1, "%s %s", pMaria, aVersion);
 		}
 
-		/* TRX at InnoDB layer */
+		/* TRX at InnoDB layer. */
 		mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX"); /* Includes RUNNING, LOCK WAIT, ROLLING BACK, COMMITTING. */
 		MYSQL_RES* result_acttr = mysql_store_result(pConn);
 
@@ -385,7 +368,7 @@ int main(int iArgCount, char* aArgV[])
 
 					if (row_trx[16] != NULL)
 					{
-						/* Truncate SQL at ~2 lines */
+						/* Truncate SQL at ~2 lines. */
 						char aQuery[300];
 						unsigned int iQLen = sizeof(aQuery) - 1;
 						strncpy(aQuery, row_trx[16], iQLen);
@@ -452,6 +435,23 @@ int main(int iArgCount, char* aArgV[])
 	mysql_close(pConn);
 
 	return EXIT_SUCCESS;
+}
+
+
+/**
+	* Sigint handling.
+	* Based on example by Greg Kemnitz.
+	*
+	* @param   integer iSig
+	* @return  void
+*/
+
+void signal_handler(int iSig)
+{
+	if (iSig == SIGINT || iSig == SIGTERM || iSig == SIGSEGV)
+	{
+		iSigCaught = 1;
+	}
 }
 
 
@@ -572,6 +572,7 @@ unsigned int options(int iArgCount, char* aArgV[])
 int msSleep(unsigned int ms)
 {
 	struct timespec rem;
+
 	struct timespec req =
 	{
 		(int) (ms / 1000),
@@ -587,12 +588,12 @@ int msSleep(unsigned int ms)
 	* Credit: Fabio Cabral.
 	*
 	* @param   array aSQL, SQL string
-	* @param   char cOrg, original char
-	* @param   char cRep, replace char
+	* @param   char cOrg, original character
+	* @param   char cRep, replacement character
 	* @return  void
 */
 
-void replaceChar(char* aSQL, char cOrg, char cRep) {
+void replaceChar(char* const aSQL, char const cOrg, char const cRep) {
 
 	char* src;
 	char* dst;
