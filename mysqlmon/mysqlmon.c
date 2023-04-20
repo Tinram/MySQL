@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.26
+	* @version       0.27
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -34,12 +34,12 @@
 
 
 #define APP_NAME "MySQLMon"
-#define MB_VERSION "0.26"
+#define MB_VERSION "0.27"
 
 
 void signal_handler(int iSig);
-void menu(char* const pFName);
 unsigned int options(int iArgCount, char* aArgV[]);
+void menu(char* const pFName);
 
 
 char* pHost = NULL;
@@ -50,26 +50,18 @@ unsigned int iPort = 3306;
 unsigned int iSigCaught = 0;
 
 
-/**
-	* Sigint handling based on an example by Greg Kemnitz.
-	*
-	* @param   integer iSig
-	* @return  void
-*/
-
-void signal_handler(int iSig)
-{
-	if (iSig == SIGINT || iSig == SIGTERM || iSig == SIGSEGV)
-	{
-		iSigCaught = 1;
-	}
-}
-
-
 int main(int iArgCount, char* aArgV[])
 {
+	pProgname = aArgV[0];
+
+	if (iArgCount <= 2)
+	{
+		menu(pProgname);
+		return EXIT_FAILURE;
+	}
+
 	MYSQL* pConn;
-	const char* pMaria = "MariaDB";
+	char* const pMaria = "MariaDB";
 	char aHostname[50];
 	char aVersion[7];
 	char aAuroraVersion[9];
@@ -80,8 +72,6 @@ int main(int iArgCount, char* aArgV[])
 	unsigned int iAurora = 0;
 	unsigned int iOldQueries = 0;
 	unsigned int iQueries = 0;
-
-	pProgname = aArgV[0];
 
 	if (signal(SIGINT, signal_handler) == SIG_ERR)
 	{
@@ -125,24 +115,24 @@ int main(int iArgCount, char* aArgV[])
 	}
 
 	/* Assign hostname. */
-	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'hostname'");
+	mysql_query(pConn, "SELECT @@hostname");
 	MYSQL_RES* result_hn = mysql_store_result(pConn);
 	MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
 	unsigned int iHLen = sizeof(aHostname) - 1;
-	strncpy(aHostname, row_hn[1], iHLen);
+	strncpy(aHostname, row_hn[0], iHLen);
 	aHostname[iHLen] = '\0';
 	mysql_free_result(result_hn);
 
 	/* Identify MySQL version | MariaDB (which does not natively possess sys schema). */
-	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'version'");
+	mysql_query(pConn, "SELECT @@version");
 	MYSQL_RES* result_ver = mysql_store_result(pConn);
 	MYSQL_ROW row_ver = mysql_fetch_row(result_ver);
-	if (strstr(row_ver[1], pMaria) != NULL)
+	if (strstr(row_ver[0], pMaria) != NULL)
 	{
 		iMaria = 1;
 	}
 	unsigned int iVLen = sizeof(aVersion) - 1;
-	strncpy(aVersion, row_ver[1], iVLen);
+	strncpy(aVersion, row_ver[0], iVLen);
 	aVersion[iVLen] = '\0';
 	mysql_free_result(result_ver);
 
@@ -159,13 +149,13 @@ int main(int iArgCount, char* aArgV[])
 		strncpy(aAuroraVersion, row_aur_ver[1], iAVLen);
 		aAuroraVersion[iAVLen] = '\0';
 
-		mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'aurora_server_id'");
+		mysql_query(pConn, "SELECT @@aurora_server_id");
 		MYSQL_RES* result_aur_sid = mysql_store_result(pConn);
 		MYSQL_ROW row_aur_sid = mysql_fetch_row(result_aur_sid);
 		mysql_free_result(result_aur_sid);
 
 		unsigned int iASIdLen = sizeof(aAuroraServerId) - 1;
-		strncpy(aAuroraServerId, row_aur_sid[1], iASIdLen);
+		strncpy(aAuroraServerId, row_aur_sid[0], iASIdLen);
 		aAuroraServerId[iASIdLen] = '\0';
 	}
 
@@ -466,6 +456,22 @@ int main(int iArgCount, char* aArgV[])
 
 
 /**
+	* Sigint handling based on an example by Greg Kemnitz.
+	*
+	* @param   integer iSig
+	* @return  void
+*/
+
+void signal_handler(int iSig)
+{
+	if (iSig == SIGINT || iSig == SIGTERM || iSig == SIGSEGV)
+	{
+		iSigCaught = 1;
+	}
+}
+
+
+/**
 	* Process command-line switches using getopt()
 	*
 	* @param   int iArgCount, number of arguments
@@ -546,7 +552,7 @@ unsigned int options(int iArgCount, char* aArgV[])
 	}
 	else if (pUser == NULL)
 	{
-		fprintf(stderr, "\n%s: use '%s --help' for help\n\n", APP_NAME, aArgV[0]);
+		fprintf(stderr, "\n%s: use '%s -h' for help\n\n", APP_NAME, aArgV[0]);
 		return 0;
 	}
 	else
