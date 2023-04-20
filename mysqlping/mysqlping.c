@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 02/09/2020
-	* @version       0.07
+	* @version       0.08
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -32,12 +32,12 @@
 
 
 #define APP_NAME "MySQLPing"
-#define MB_VERSION "0.07"
+#define MB_VERSION "0.08"
 
 
 void signal_handler(int sig);
-void menu(char* const pFName);
 unsigned int options(int iArgCount, char* aArgV[]);
+void menu(char* const pFName);
 
 
 char* pHost = NULL;
@@ -49,25 +49,16 @@ unsigned int iFlood = 0; // ping flood flag
 unsigned int iSigCaught = 0;
 
 
-/**
-	* Sigint handling.
-	* Based on example by Greg Kemnitz.
-	*
-	* @param   integer iSig
-	* @return  void
-*/
-
-void signal_handler(int iSig)
-{
-	if (iSig == SIGINT)
-	{
-		iSigCaught = 1;
-	}
-}
-
-
 int main(int iArgCount, char* aArgV[])
 {
+	pProgname = aArgV[0];
+
+	if (iArgCount <= 2)
+	{
+		menu(pProgname);
+		return EXIT_FAILURE;
+	}
+
 	unsigned int iMenu = options(iArgCount, aArgV);
 
 	if (signal(SIGINT, signal_handler) == SIG_ERR)
@@ -84,8 +75,6 @@ int main(int iArgCount, char* aArgV[])
 	{
 		pPassword = getpass("password: "); // obsolete fn, use termios.h in future
 	}
-
-	pProgname = aArgV[0];
 
 	MYSQL* pConn;
 
@@ -157,6 +146,23 @@ int main(int iArgCount, char* aArgV[])
 	mysql_close(pConn);
 
 	return EXIT_SUCCESS;
+}
+
+
+/**
+	* Sigint handling.
+	* Based on example by Greg Kemnitz.
+	*
+	* @param   integer iSig
+	* @return  void
+*/
+
+void signal_handler(int iSig)
+{
+	if (iSig == SIGINT)
+	{
+		iSigCaught = 1;
+	}
 }
 
 
@@ -245,7 +251,7 @@ unsigned int options(int iArgCount, char* aArgV[])
 	}
 	else if (pUser == NULL)
 	{
-		fprintf(stderr, "\n%s: use '%s --help' for help\n\n", APP_NAME, aArgV[0]);
+		fprintf(stderr, "\n%s: use '%s -h' for help\n\n", APP_NAME, aArgV[0]);
 		return 0;
 	}
 	else
