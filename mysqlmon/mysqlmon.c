@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.27
+	* @version       0.28
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -34,7 +34,7 @@
 
 
 #define APP_NAME "MySQLMon"
-#define MB_VERSION "0.27"
+#define MB_VERSION "0.28"
 
 
 void signal_handler(int iSig);
@@ -484,25 +484,19 @@ unsigned int options(int iArgCount, char* aArgV[])
 	int iOpts = 0;
 	int iOptsIdx = 0;
 	unsigned int iHelp = 0;
-	unsigned int iVersion = 0;
 
 	struct option aLongOpts[] =
 	{
 		{"help", no_argument, 0, 'i'},
-		{"version", no_argument, 0, 'v'},
 		{0, 0, 0, 0}
 	};
 
-	while ((iOpts = getopt_long(iArgCount, aArgV, "ivh:w:u:p:", aLongOpts, &iOptsIdx)) != -1)
+	while ((iOpts = getopt_long(iArgCount, aArgV, "ih:w:u:p:", aLongOpts, &iOptsIdx)) != -1)
 	{
 		switch (iOpts)
 		{
 			case 'i':
 				iHelp = 1;
-				break;
-
-			case 'v':
-				iVersion = 1;
 				break;
 
 			case 'h':
@@ -543,11 +537,6 @@ unsigned int options(int iArgCount, char* aArgV[])
 	if (iHelp == 1)
 	{
 		menu(aArgV[0]);
-		return 0;
-	}
-	else if (iVersion == 1)
-	{
-		fprintf(stdout, "\n%s v.%s\n\n", APP_NAME, MB_VERSION);
 		return 0;
 	}
 	else if (pUser == NULL)
