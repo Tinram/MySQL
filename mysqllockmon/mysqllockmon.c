@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/07/2022
-	* @version       0.20 (from mysqltrxmon)
+	* @version       0.21 (from mysqltrxmon)
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,45 +33,36 @@
 
 
 #define APP_NAME "MySQLLockMon"
-#define MB_VERSION "0.20"
+#define MB_VERSION "0.21"
 
 
 void signal_handler(int iSig);
-void replaceChar(char* aSQL, char cOrg, char cRep);
-void menu(char* const pFName);
-int msSleep(unsigned int ms);
 unsigned int options(int iArgCount, char* aArgV[]);
+int msSleep(unsigned int ms);
+void replaceChar(char* aSQL, char const pOrg, char const pRep);
+void menu(char* const pFName);
 
 
 char* pHost = NULL;
 char* pUser = NULL;
 char* pPassword = NULL;
 char* pProgname = NULL;
-const char* pRoot = "root";
+char* const pRoot = "root";
 unsigned int iPort = 3306;
 unsigned int iTime = 250; // millisecs
 unsigned int iSigCaught = 0;
 
 
-/**
-	* Sigint handling.
-	* Based on example by Greg Kemnitz.
-	*
-	* @param   integer iSig
-	* @return  void
-*/
-
-void signal_handler(int iSig)
-{
-	if (iSig == SIGINT || iSig == SIGTERM || iSig == SIGSEGV)
-	{
-		iSigCaught = 1;
-	}
-}
-
-
 int main(int iArgCount, char* aArgV[])
 {
+	pProgname = aArgV[0];
+
+	if (iArgCount <= 2)
+	{
+		menu(pProgname);
+		return EXIT_FAILURE;
+	}
+
 	MYSQL* pConn;
 	unsigned int iMenu = options(iArgCount, aArgV);
 	unsigned int iV8 = 0;
@@ -83,8 +74,6 @@ int main(int iArgCount, char* aArgV[])
 	char cDisplay = 'T'; /* TRX display default. */
 	char aHostname[50];
 	char aVersion[7];
-
-	pProgname = aArgV[0];
 
 	if (signal(SIGINT, signal_handler) == SIG_ERR)
 	{
@@ -131,32 +120,32 @@ int main(int iArgCount, char* aArgV[])
 	}
 
 	/* Assign hostname. */
-	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'hostname'");
+	mysql_query(pConn, "SELECT @@hostname");
 	MYSQL_RES* result_hn = mysql_store_result(pConn);
 	MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
 	unsigned int iHLen = sizeof(aHostname) - 1;
-	strncpy(aHostname, row_hn[1], iHLen);
+	strncpy(aHostname, row_hn[0], iHLen);
 	aHostname[iHLen] = '\0';
 	mysql_free_result(result_hn);
 
 	/* Identify MySQL version. */
-	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'version'");
+	mysql_query(pConn, "SELECT @@version");
 	MYSQL_RES* result_ver = mysql_store_result(pConn);
 	MYSQL_ROW row_ver = mysql_fetch_row(result_ver);
 	unsigned int iVLen = sizeof(aVersion) - 1;
-	strncpy(aVersion, row_ver[1], iVLen);
+	strncpy(aVersion, row_ver[0], iVLen);
 	aVersion[iVLen] = '\0';
-	if ((unsigned int) atoi(row_ver[1]) >= 8)
+	if ((unsigned int) atoi(row_ver[0]) >= 8)
 	{
 		iV8 = 1;
 	}
 	mysql_free_result(result_ver);
 
 	/* Check performance schema availability. */
-	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'performance_schema'");
+	mysql_query(pConn, "SELECT @@performance_schema");
 	MYSQL_RES* result_ps = mysql_store_result(pConn);
 	MYSQL_ROW row_ps = mysql_fetch_row(result_ps);
-	if (strstr(row_ps[1], "ON") != NULL)
+	if (strstr(row_ps[0], "1") != NULL)
 	{
 		iPS = 1;
 	}
@@ -388,11 +377,11 @@ int main(int iArgCount, char* aArgV[])
 					mvprintw(iRow, 37, "w-lkd");
 					mvprintw(iRow, 47, "w-mod");
 					mvprintw(iRow, 57, "w-mode");
-					mvprintw(iRow, 67, "b-pid");
-					mvprintw(iRow, 77, "b-mode");
-					mvprintw(iRow, 87, "b-lkd");
-					mvprintw(iRow, 100, "b-mod");
-					mvprintw(iRow, 111, "b-time");
+					mvprintw(iRow, 75, "b-pid");
+					mvprintw(iRow, 85, "b-mode");
+					mvprintw(iRow, 104, "b-lkd");
+					mvprintw(iRow, 113, "b-mod");
+					mvprintw(iRow, 126, "b-time");
 
 					iRow++;
 					attrset(A_BOLD | COLOR_PAIR(1));
@@ -403,11 +392,11 @@ int main(int iArgCount, char* aArgV[])
 					mvprintw(iRow, 37, row_res[4]);
 					mvprintw(iRow, 47, row_res[5]);
 					mvprintw(iRow, 57, row_res[7]);
-					mvprintw(iRow, 67, row_res[8]);
-					mvprintw(iRow, 77, row_res[10]);
-					mvprintw(iRow, 87, row_res[12]);
-					mvprintw(iRow, 100, row_res[13]);
-					mvprintw(iRow, 111, row_res[11]);
+					mvprintw(iRow, 75, row_res[8]);
+					mvprintw(iRow, 85, row_res[10]);
+					mvprintw(iRow, 104, row_res[12]);
+					mvprintw(iRow, 113, row_res[13]);
+					mvprintw(iRow, 126, row_res[11]);
 
 					if (row_res[6] != NULL)
 					{
@@ -677,6 +666,23 @@ int main(int iArgCount, char* aArgV[])
 
 
 /**
+	* Sigint handling.
+	* Based on example by Greg Kemnitz.
+	*
+	* @param   integer iSig
+	* @return  void
+*/
+
+void signal_handler(int iSig)
+{
+	if (iSig == SIGINT || iSig == SIGTERM || iSig == SIGSEGV)
+	{
+		iSigCaught = 1;
+	}
+}
+
+
+/**
 	* Process command-line switches using getopt()
 	*
 	* @param   integer iArgCount, number of arguments
@@ -689,25 +695,19 @@ unsigned int options(int iArgCount, char* aArgV[])
 	int iOpts = 0;
 	int iOptsIdx = 0;
 	unsigned int iHelp = 0;
-	unsigned int iVersion = 0;
 
 	struct option aLongOpts[] =
 	{
 		{"help", no_argument, 0, 'i'},
-		{"version", no_argument, 0, 'v'},
 		{0, 0, 0, 0}
 	};
 
-	while ((iOpts = getopt_long(iArgCount, aArgV, "ivh:w:u:f:t:p:", aLongOpts, &iOptsIdx)) != -1)
+	while ((iOpts = getopt_long(iArgCount, aArgV, "ih:w:u:f:t:p:", aLongOpts, &iOptsIdx)) != -1)
 	{
 		switch (iOpts)
 		{
 			case 'i':
 				iHelp = 1;
-				break;
-
-			case 'v':
-				iVersion = 1;
 				break;
 
 			case 'h':
@@ -756,14 +756,9 @@ unsigned int options(int iArgCount, char* aArgV[])
 		menu(aArgV[0]);
 		return 0;
 	}
-	else if (iVersion == 1)
-	{
-		fprintf(stdout, "\n%s v.%s\n\n", APP_NAME, MB_VERSION);
-		return 0;
-	}
 	else if (pUser == NULL)
 	{
-		fprintf(stderr, "\n%s: use '%s --help' for help\n\n", APP_NAME, aArgV[0]);
+		fprintf(stderr, "\n%s: use '%s -h for help\n\n", APP_NAME, aArgV[0]);
 		return 0;
 	}
 	else
@@ -805,11 +800,11 @@ int msSleep(unsigned int ms)
 	*
 	* @param   array aSQL, SQL string
 	* @param   char cOrg, original char
-	* @param   char cRep, replace char
+	* @param   char cRep, replacement char
 	* @return  void
 */
 
-void replaceChar(char* aSQL, char cOrg, char cRep) {
+void replaceChar(char* const aSQL, char const cOrg, char const cRep) {
 
 	char* src;
 	char* dst;
