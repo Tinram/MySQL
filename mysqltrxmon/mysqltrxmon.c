@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.28
+	* @version       0.29
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQLTrxMon"
-#define MB_VERSION "0.28"
+#define MB_VERSION "0.29"
 
 
 void signal_handler(int iSig);
@@ -56,6 +56,14 @@ unsigned int iTime = 250; // millisecs
 
 int main(int iArgCount, char* aArgV[])
 {
+	pProgname = aArgV[0];
+
+	if (iArgCount <= 2)
+	{
+		menu(pProgname);
+		return EXIT_FAILURE;
+	}
+
 	MYSQL* pConn;
 	FILE* fp;
 	char* const pMaria = "MariaDB";
@@ -73,8 +81,6 @@ int main(int iArgCount, char* aArgV[])
 	unsigned int iAurora = 0;
 	unsigned int iPadWidth = 157; // 164 for 13" MacBook
 	unsigned int iPadHeight = 35; // 30-50; fullscreen terminal differs to windowed
-
-	pProgname = aArgV[0];
 
 	if (signal(SIGINT, signal_handler) == SIG_ERR)
 	{
@@ -124,24 +130,24 @@ int main(int iArgCount, char* aArgV[])
 	scrollok(pPad, TRUE);
 
 	/* Assign hostname. */
-	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'hostname'");
+	mysql_query(pConn, "SELECT @@hostname");
 	MYSQL_RES* result_hn = mysql_store_result(pConn);
 	MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
 	unsigned int iHLen = sizeof(aHostname) - 1;
-	strncpy(aHostname, row_hn[1], iHLen);
+	strncpy(aHostname, row_hn[0], iHLen);
 	aHostname[iHLen] = '\0';
 	mysql_free_result(result_hn);
 
 	/* Identify MySQL version | MariaDB. */
-	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'version'");
+	mysql_query(pConn, "SELECT @@version");
 	MYSQL_RES* result_ver = mysql_store_result(pConn);
 	MYSQL_ROW row_ver = mysql_fetch_row(result_ver);
-	if (strstr(row_ver[1], pMaria) != NULL)
+	if (strstr(row_ver[0], pMaria) != NULL)
 	{
 		iMaria = 1;
 	}
 	unsigned int iVLen = sizeof(aVersion) - 1;
-	strncpy(aVersion, row_ver[1], iVLen);
+	strncpy(aVersion, row_ver[0], iVLen);
 	aVersion[iVLen] = '\0';
 	mysql_free_result(result_ver);
 
@@ -158,13 +164,13 @@ int main(int iArgCount, char* aArgV[])
 		strncpy(aAuroraVersion, row_aur_ver[1], iAVLen);
 		aAuroraVersion[iAVLen] = '\0';
 
-		mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'aurora_server_id'");
+		mysql_query(pConn, "SELECT @@aurora_server_id");
 		MYSQL_RES* result_aur_sid = mysql_store_result(pConn);
 		MYSQL_ROW row_aur_sid = mysql_fetch_row(result_aur_sid);
 		mysql_free_result(result_aur_sid);
 
 		unsigned int iASIdLen = sizeof(aAuroraServerId) - 1;
-		strncpy(aAuroraServerId, row_aur_sid[1], iASIdLen);
+		strncpy(aAuroraServerId, row_aur_sid[0], iASIdLen);
 		aAuroraServerId[iASIdLen] = '\0';
 	}
 
@@ -187,10 +193,10 @@ int main(int iArgCount, char* aArgV[])
 	}
 
 	/* Check performance schema availability. */
-	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'performance_schema'");
+	mysql_query(pConn, "SELECT @@performance_schema");
 	MYSQL_RES* result_ps = mysql_store_result(pConn);
 	MYSQL_ROW row_ps = mysql_fetch_row(result_ps);
-	if (strstr(row_ps[1], "ON") != NULL)
+	if (strstr(row_ps[0], "1") != NULL)
 	{
 		iPS = 1;
 	}
@@ -468,25 +474,19 @@ unsigned int options(int iArgCount, char* aArgV[])
 	int iOpts = 0;
 	int iOptsIdx = 0;
 	unsigned int iHelp = 0;
-	unsigned int iVersion = 0;
 
 	struct option aLongOpts[] =
 	{
 		{"help", no_argument, 0, 'i'},
-		{"version", no_argument, 0, 'v'},
 		{0, 0, 0, 0}
 	};
 
-	while ((iOpts = getopt_long(iArgCount, aArgV, "ivh:w:u:f:t:p:", aLongOpts, &iOptsIdx)) != -1)
+	while ((iOpts = getopt_long(iArgCount, aArgV, "ih:w:u:f:t:p:", aLongOpts, &iOptsIdx)) != -1)
 	{
 		switch (iOpts)
 		{
 			case 'i':
 				iHelp = 1;
-				break;
-
-			case 'v':
-				iVersion = 1;
 				break;
 
 			case 'h':
@@ -539,14 +539,9 @@ unsigned int options(int iArgCount, char* aArgV[])
 		menu(aArgV[0]);
 		return 0;
 	}
-	else if (iVersion == 1)
-	{
-		fprintf(stdout, "\n%s v.%s\n\n", APP_NAME, MB_VERSION);
-		return 0;
-	}
 	else if (pUser == NULL)
 	{
-		fprintf(stderr, "\n%s: use '%s --help' for help\n\n", APP_NAME, aArgV[0]);
+		fprintf(stderr, "\n%s: use '%s -h' for help\n\n", APP_NAME, aArgV[0]);
 		return 0;
 	}
 	else
