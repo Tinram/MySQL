@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.29
+	* @version       0.30
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQLTrxMon"
-#define MB_VERSION "0.29"
+#define MB_VERSION "0.30"
 
 
 void signal_handler(int iSig);
@@ -254,13 +254,18 @@ int main(int iArgCount, char* aArgV[])
 			iAccess = 1;
 		}
 
-		mysql_free_result(result_acttr);
-
 		if (iAccess == 1)
 		{
 			MYSQL_ROW row_acttr = mysql_fetch_row(result_acttr);
 			attrset(A_BOLD | COLOR_PAIR(4));
 			mvprintw(iRow += 2, 1, "trx: %s", row_acttr[0]);
+
+			/* TRX Lock Waits */
+			mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX WHERE trx_state = 'LOCK WAIT'");
+			MYSQL_RES* result_trlk = mysql_store_result(pConn);
+			MYSQL_ROW row_trlk = mysql_fetch_row(result_trlk);
+			mvprintw(iRow += 1, 1, "lwa: %s", row_trlk[0]);
+			mysql_free_result(result_trlk);
 
 			/* History List Length */
 			mysql_query(pConn, "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE NAME = 'trx_rseg_history_len'");
@@ -270,6 +275,8 @@ int main(int iArgCount, char* aArgV[])
 			attrset(A_NORMAL);
 			mysql_free_result(result_hll);
 		}
+
+		mysql_free_result(result_acttr);
 
 		if (iPS == 0)
 		{
