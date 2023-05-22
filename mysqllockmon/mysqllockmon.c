@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/07/2022
-	* @version       0.21 (from mysqltrxmon)
+	* @version       0.22 (from mysqltrxmon)
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQLLockMon"
-#define MB_VERSION "0.21"
+#define MB_VERSION "0.22"
 
 
 void signal_handler(int iSig);
@@ -182,8 +182,6 @@ int main(int iArgCount, char* aArgV[])
 			iAccess = 1;
 		}
 
-		mysql_free_result(result_acttr);
-
 		if (iAccess == 1)
 		{
 			MYSQL_ROW row_acttr = mysql_fetch_row(result_acttr);
@@ -216,6 +214,8 @@ int main(int iArgCount, char* aArgV[])
 				}
 			}
 		}
+
+		mysql_free_result(result_acttr);
 
 		if (iPS == 0)
 		{
