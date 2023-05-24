@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.28
+	* @version       0.29
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -34,7 +34,7 @@
 
 
 #define APP_NAME "MySQLMon"
-#define MB_VERSION "0.28"
+#define MB_VERSION "0.29"
 
 
 void signal_handler(int iSig);
@@ -67,7 +67,9 @@ int main(int iArgCount, char* aArgV[])
 	char aAuroraVersion[9];
 	char aAuroraServerId[50];
 	unsigned int iMenu = options(iArgCount, aArgV);
-	unsigned int iAccess = 0;
+	unsigned int iPSAccess = 0;
+	unsigned int iISAccess = 0;
+	unsigned int iV8 = 0;
 	unsigned int iMaria = 0;
 	unsigned int iAurora = 0;
 	unsigned int iOldQueries = 0;
@@ -134,6 +136,10 @@ int main(int iArgCount, char* aArgV[])
 	unsigned int iVLen = sizeof(aVersion) - 1;
 	strncpy(aVersion, row_ver[0], iVLen);
 	aVersion[iVLen] = '\0';
+	if ((unsigned int) atoi(row_ver[0]) >= 8)
+	{
+		iV8 = 1;
+	}
 	mysql_free_result(result_ver);
 
 	/* Identify Aurora version, if applicable. */
@@ -158,7 +164,6 @@ int main(int iArgCount, char* aArgV[])
 		strncpy(aAuroraServerId, row_aur_sid[0], iASIdLen);
 		aAuroraServerId[iASIdLen] = '\0';
 	}
-
 
 	mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* Total queries, not conn questions. */
 	MYSQL_RES* result_queries = mysql_store_result(pConn);
@@ -287,33 +292,48 @@ int main(int iArgCount, char* aArgV[])
 		printw(" sort merge passes: %s\n\n", row_smp[1]);
 		mysql_free_result(result_smp);
 
-		/* TRX at MySQL layer */
+		/* P_S test and TRX at MySQL layer. */
 		mysql_query(pConn, "SELECT COUNT(*) FROM performance_schema.events_transactions_current WHERE state = 'ACTIVE' AND timer_wait > 1000000000000 * 1");
 			/* Requires performance_schema setup_consumers.events_transactions_current and setup_instruments.transaction to be enabled. */
 		MYSQL_RES* result_trx1 = mysql_store_result(pConn);
-
-		/* Upon access denied error, set limit for less privileged users. */
 		if (mysql_errno(pConn) == 0)
 		{
-			iAccess = 1;
+			iPSAccess = 1;
 		}
-
-		if (iAccess == 1)
+		if (iPSAccess == 1)
 		{
 			MYSQL_ROW row_trx1 = mysql_fetch_row(result_trx1);
-			printw(" active trx (mysql): %s\n", row_trx1[0]);
+			printw(" trx (mysql): %s\n", row_trx1[0]);
 		}
-
 		mysql_free_result(result_trx1);
 
-		if (iAccess == 1)
+		/* I_S test. */
+		mysql_query(pConn, "SELECT trx_id FROM information_schema.INNODB_TRX LIMIT 1");
+		MYSQL_RES* result_istest = mysql_store_result(pConn);
+		if (mysql_errno(pConn) == 0)
+		{
+			iISAccess = 1;
+		}
+		mysql_free_result(result_istest);
+
+		if (iISAccess == 1)
 		{
 			/* TRX at InnoDB layer. */
 			mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX"); /* Includes all trx_state: RUNNING, LOCK WAIT, ROLLING BACK, COMMITTING */
 			MYSQL_RES* result_trx2 = mysql_store_result(pConn);
 			MYSQL_ROW row_trx2 = mysql_fetch_row(result_trx2);
-			printw(" active trx (innodb): %s\n", row_trx2[0]);
+			printw(" trx (innodb):");
+			attrset(A_BOLD | COLOR_PAIR(1));
+			printw(" %s\n", row_trx2[0]);
+			attrset(A_NORMAL);
 			mysql_free_result(result_trx2);
+
+			/* TRX Lock Waits */
+			mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX WHERE trx_state = 'LOCK WAIT'");
+			MYSQL_RES* result_trxlk = mysql_store_result(pConn);
+			MYSQL_ROW row_trxlk = mysql_fetch_row(result_trxlk);
+			printw(" trx locks: %s\n", row_trxlk[0]);
+			mysql_free_result(result_trxlk);
 
 			/* History List Length */
 			mysql_query(pConn, "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE name = 'trx_rseg_history_len'");
@@ -325,12 +345,6 @@ int main(int iArgCount, char* aArgV[])
 			mysql_free_result(result_hll);
 		}
 
-		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_current_waits'");
-		MYSQL_RES* result_irlcw = mysql_store_result(pConn);
-		MYSQL_ROW row_irlcw = mysql_fetch_row(result_irlcw);
-		printw(" row lock current waits: %s\n", row_irlcw[1]);
-		mysql_free_result(result_irlcw);
-
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_time'");
 		MYSQL_RES* result_irlt = mysql_store_result(pConn);
 		MYSQL_ROW row_irlt = mysql_fetch_row(result_irlt);
@@ -341,8 +355,7 @@ int main(int iArgCount, char* aArgV[])
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_time_avg'");
 		MYSQL_RES* result_irlta = mysql_store_result(pConn);
 		MYSQL_ROW row_irlta = mysql_fetch_row(result_irlta);
-		float irlta = ((atoi(row_irlta[1])) / 1000);
-		printw(" row lock time avg: %2.1fs\n", irlta);
+		printw(" row lock time avg: %sms\n", row_irlta[1]);
 		mysql_free_result(result_irlta);
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_time_max'");
@@ -358,13 +371,51 @@ int main(int iArgCount, char* aArgV[])
 		printw(" row lock waits: %s\n", row_irlw[1]);
 		mysql_free_result(result_irlw);
 
-		if (iAccess == 1)
+		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_row_lock_current_waits'");
+		MYSQL_RES* result_irlcw = mysql_store_result(pConn);
+		MYSQL_ROW row_irlcw = mysql_fetch_row(result_irlcw);
+		printw(" row lock current waits: %s\n", row_irlcw[1]);
+		mysql_free_result(result_irlcw);
+
+		if (iISAccess == 1)
 		{
 			mysql_query(pConn, "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE NAME = 'lock_timeouts'");
 			MYSQL_RES* result_lto = mysql_store_result(pConn);
 			MYSQL_ROW row_lto = mysql_fetch_row(result_lto);
 			printw(" lock timeouts: %s\n", row_lto[0]);
 			mysql_free_result(result_lto);
+
+			if (iV8 != 1 || iMaria == 1)
+			{
+				mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_LOCKS WHERE LOCK_TYPE = 'TABLE'");
+				MYSQL_RES* result_tablelocks = mysql_store_result(pConn);
+				MYSQL_ROW table_locks = mysql_fetch_row(result_tablelocks);
+				mysql_free_result(result_tablelocks);
+
+				mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_LOCKS WHERE LOCK_TYPE = 'RECORD'");
+				MYSQL_RES* result_recordlocks = mysql_store_result(pConn);
+				MYSQL_ROW record_locks = mysql_fetch_row(result_recordlocks);
+				mysql_free_result(result_recordlocks);
+
+				printw(" locks: tab: %s rec: %s\n", table_locks[0], record_locks[0]);
+			}
+			else
+			{
+				if (iPSAccess == 1)
+				{
+					mysql_query(pConn, "SELECT COUNT(*) FROM performance_schema.data_locks WHERE LOCK_TYPE = 'TABLE'");
+					MYSQL_RES* result_tablelocks = mysql_store_result(pConn);
+					MYSQL_ROW table_locks = mysql_fetch_row(result_tablelocks);
+					mysql_free_result(result_tablelocks);
+
+					mysql_query(pConn, "SELECT COUNT(*) FROM performance_schema.data_locks WHERE LOCK_TYPE = 'RECORD'");
+					MYSQL_RES* result_recordlocks = mysql_store_result(pConn);
+					MYSQL_ROW record_locks = mysql_fetch_row(result_recordlocks);
+					mysql_free_result(result_recordlocks);
+
+					printw(" locks: tab: %s rec: %s\n", table_locks[0], record_locks[0]);
+				}
+			}
 
 			mysql_query(pConn, "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE NAME = 'lock_deadlocks'");
 			MYSQL_RES* result_dl = mysql_store_result(pConn);
@@ -416,7 +467,7 @@ int main(int iArgCount, char* aArgV[])
 		printw(" BP: %uMB\n", bpsmb);
 		mysql_free_result(result_bps);
 
-		if (iAccess == 1)
+		if (iPSAccess == 1)
 		{
 			mysql_query(pConn, "SELECT ROUND(100 * (SELECT Variable_value FROM performance_schema.global_status WHERE Variable_name = 'Innodb_buffer_pool_pages_data') / (SELECT Variable_value FROM performance_schema.global_status WHERE Variable_name = 'Innodb_buffer_pool_pages_total'), 2)");
 			MYSQL_RES* result_bpf = mysql_store_result(pConn);
@@ -425,7 +476,7 @@ int main(int iArgCount, char* aArgV[])
 			mysql_free_result(result_bpf);
 		}
 
-		if (iAccess == 1 && iMaria == 0) /* Block sys access to MariaDB. */
+		if (iPSAccess == 1 && iMaria == 0) /* Block sys access to MariaDB. */
 		{
 			mysql_query(pConn, "SELECT ROUND(100 - (100 * (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_pages_read') / (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_buffer_pool_read_requests')), 2)");
 			MYSQL_RES* result_bphr = mysql_store_result(pConn);
