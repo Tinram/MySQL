@@ -14,7 +14,7 @@
 
 Originally created to continuously monitor MySQL counters during *Sysbench* load testing.
 
-Now it's my preferred tool to monitor active transaction and *History List Length* counters on Aurora instances.
+Now it's my preferred quick overview tool of transaction, lock, etc counters on Aurora instances.
 
 
 ## OS Support
