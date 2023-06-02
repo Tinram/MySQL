@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.29
+	* @version       0.30
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -34,7 +34,7 @@
 
 
 #define APP_NAME "MySQLMon"
-#define MB_VERSION "0.29"
+#define MB_VERSION "0.30"
 
 
 void signal_handler(int iSig);
@@ -236,10 +236,10 @@ int main(int iArgCount, char* aArgV[])
 		attrset(A_NORMAL);
 		mysql_free_result(result_muc);
 
-		mysql_query(pConn, "SHOW GLOBAL VARIABLES WHERE Variable_name = 'max_connections'");
+		mysql_query(pConn, "SELECT @@max_connections");
 		MYSQL_RES* result_mc = mysql_store_result(pConn);
 		MYSQL_ROW row_mc = mysql_fetch_row(result_mc);
-		printw(" max connections: %s\n", row_mc[1]);
+		printw(" max connections: %s\n", row_mc[0]);
 		mysql_free_result(result_mc);
 
 		mysql_query(pConn, "SHOW STATUS WHERE Variable_name = 'Connection_errors_max_connections'");
@@ -256,10 +256,10 @@ int main(int iArgCount, char* aArgV[])
 		attrset(A_NORMAL);
 		mysql_free_result(result_tr);
 
-		mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'thread_cache_size'");
+		mysql_query(pConn, "SELECT @@thread_cache_size");
 		MYSQL_RES* result_tcs = mysql_store_result(pConn);
 		MYSQL_ROW row_tcs = mysql_fetch_row(result_tcs);
-		printw(" thread cache size: %s\n", row_tcs[1]);
+		printw(" thread cache size: %s\n", row_tcs[0]);
 		mysql_free_result(result_tcs);
 
 		mysql_query(pConn, "SHOW STATUS WHERE Variable_name = 'Threads_cached'");
@@ -460,11 +460,10 @@ int main(int iArgCount, char* aArgV[])
 		attrset(A_NORMAL);
 		mysql_free_result(result_queries2);
 
-		mysql_query(pConn, "SHOW GLOBAL VARIABLES WHERE Variable_name = 'innodb_buffer_pool_size'");
+		mysql_query(pConn, "SELECT ROUND(@@innodb_buffer_pool_size / 1024 / 1024 / 1024, 2)");
 		MYSQL_RES* result_bps = mysql_store_result(pConn);
 		MYSQL_ROW row_bps = mysql_fetch_row(result_bps);
-		unsigned int bpsmb = (((unsigned int) atoi(row_bps[1])) / 1024 / 1024);
-		printw(" BP: %uMB\n", bpsmb);
+		printw(" BP: %sGB\n", row_bps[0]);
 		mysql_free_result(result_bps);
 
 		if (iPSAccess == 1)
