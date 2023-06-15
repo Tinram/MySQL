@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/07/2022
-	* @version       0.22 (from mysqltrxmon)
+	* @version       0.23 (from mysqltrxmon)
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -16,7 +16,7 @@
 	*
 	* Usage:
 	*                ./mysqllockmon --help
-	*                ./mysqllockmon -u <username> [-h <host>] [-f <logfile>] [-t <time (ms)>] [-p <port>]
+	*                ./mysqllockmon -u <username> [-h <host>] [-t <time (ms)>] [-p <port>]
 */
 
 
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQLLockMon"
-#define MB_VERSION "0.22"
+#define MB_VERSION "0.23"
 
 
 void signal_handler(int iSig);
@@ -720,7 +720,7 @@ unsigned int options(int iArgCount, char* aArgV[])
 
 			case 't':
 				iTime = (unsigned int) atoi(optarg);
-				if (iTime < 10) {iTime = 10;}
+				if (iTime < 100) {iTime = 100;}
 				if (iTime > 2000) {iTime = 2000;}
 				break;
 
