@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.30
+	* @version       0.31
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -33,7 +33,7 @@
 
 
 #define APP_NAME "MySQLTrxMon"
-#define MB_VERSION "0.30"
+#define MB_VERSION "0.31"
 
 
 void signal_handler(int iSig);
@@ -188,7 +188,7 @@ int main(int iArgCount, char* aArgV[])
 		else
 		{
 			fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", "trx", "thd", "ps", "exm", "lock", "mod", "afft", "tmpd", "tlock", "noidx", "wait", "start", "secs", "user", "program", "trxstate", "trxopstate", "query");
-			fclose(fp);
+			fflush(fp); /* Output header row immediately. */
 		}
 	}
 
@@ -322,18 +322,6 @@ int main(int iArgCount, char* aArgV[])
 			MYSQL_RES* result_trx = mysql_store_result(pConn);
 			MYSQL_ROW row_trx;
 
-			if (pLogfile != NULL)
-			{
-				fp = fopen(pLogfile, "a");
-
-				if (fp == NULL)
-				{
-					fprintf(stderr, "\nCannot write to logfile.\n\n");
-					mysql_close(pConn);
-					return EXIT_FAILURE;
-				}
-			}
-
 			iRow = 0;
 
 			while ((row_trx = mysql_fetch_row(result_trx)))
@@ -399,6 +387,7 @@ int main(int iArgCount, char* aArgV[])
 					if (pLogfile != NULL)
 					{
 						fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%s|%s|%c|%s|%s|%s|%s|%s|%s|%s|%s;\n", row_trx[0], row_trx[1], row_trx[2], row_trx[3], row_trx[4], row_trx[5], row_trx[6], row_trx[7], row_trx[8], idx, row_trx[10], row_trx[11], row_trx[12], row_trx[13], row_trx[17], row_trx[14], row_trx[15], row_trx[16]);
+						//fflush(fp); /* Prefer default OS buffering over immediate flushing with fflush() */
 					}
 				}
 
@@ -406,11 +395,6 @@ int main(int iArgCount, char* aArgV[])
 			}
 
 			mysql_free_result(result_trx);
-
-			if (pLogfile != NULL)
-			{
-				fclose(fp);
-			}
 
 			iCh = wgetch(pPad);
 
@@ -437,6 +421,11 @@ int main(int iArgCount, char* aArgV[])
 		prefresh(pPad, iPadPos, 1, 9, 1, iPadHeight, iPadWidth); /* (p, scrollY, scrollX, posY, posX, sizeY, sizeX) */
 
 		msSleep(iTime);
+	}
+
+	if (pLogfile != NULL)
+	{
+		fclose(fp);
 	}
 
 	curs_set(1);
@@ -510,7 +499,7 @@ unsigned int options(int iArgCount, char* aArgV[])
 
 			case 't':
 				iTime = (unsigned int) atoi(optarg);
-				if (iTime < 10) {iTime = 10;}
+				if (iTime < 100) {iTime = 100;} /* breakdown in behaviour below 100ms */
 				if (iTime > 2000) {iTime = 2000;}
 				break;
 
