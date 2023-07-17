@@ -7,14 +7,14 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.30
+	* @version       0.31
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
 	* Compile:
 	* (Linux GCC x64)
 	*                Required dependencies: libmysqlclient-dev, libncurses5-dev
-	*                gcc mysqlmon.c $(mysql_config --cflags) $(mysql_config --libs) -o mysqlmon -lncurses -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -std=gnu99 -s
+	*                gcc mysqlmon.c $(mysql_config --cflags) $(mysql_config --libs) -o mysqlmon -I../mysql_include/ -lncurses -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -std=gnu99 -s
 	*
 	* Usage:
 	*                ./mysqlmon --help
@@ -22,35 +22,15 @@
 */
 
 
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
-#include <curses.h>
-#include <getopt.h>
-#include <mysql.h>
+#include <mysql_utils.h>
+#include <mysql_utils.c>
 
 
 #define APP_NAME "MySQLMon"
-#define MB_VERSION "0.30"
+#define MB_VERSION "0.31"
 
 
-void signal_handler(int iSig);
-unsigned int options(int iArgCount, char* aArgV[]);
-void menu(char* const pFName);
-
-
-char* pHost = NULL;
-char* pUser = NULL;
-char* pPassword = NULL;
-char* pProgname = NULL;
-unsigned int iPort = 3306;
-unsigned int iSigCaught = 0;
-
-
-int main(int iArgCount, char* aArgV[])
+int main(int iArgCount, char* const aArgV[])
 {
 	pProgname = aArgV[0];
 
@@ -75,7 +55,7 @@ int main(int iArgCount, char* aArgV[])
 	unsigned int iOldQueries = 0;
 	unsigned int iQueries = 0;
 
-	if (signal(SIGINT, signal_handler) == SIG_ERR)
+	if (signal(SIGINT, signalHandler) == SIG_ERR)
 	{
 		fprintf(stderr, "Signal function registration failed!\n");
 		return EXIT_FAILURE;
@@ -108,6 +88,7 @@ int main(int iArgCount, char* aArgV[])
 
 	initscr();
 
+	/* Check for ncurses colour support. */
 	if (has_colors() == FALSE)
 	{
 		endwin();
@@ -117,53 +98,13 @@ int main(int iArgCount, char* aArgV[])
 	}
 
 	/* Assign hostname. */
-	mysql_query(pConn, "SELECT @@hostname");
-	MYSQL_RES* result_hn = mysql_store_result(pConn);
-	MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
-	unsigned int iHLen = sizeof(aHostname) - 1;
-	strncpy(aHostname, row_hn[0], iHLen);
-	aHostname[iHLen] = '\0';
-	mysql_free_result(result_hn);
+	assignHostname(pConn, aHostname, sizeof(aHostname) - 1);
 
 	/* Identify MySQL version | MariaDB (which does not natively possess sys schema). */
-	mysql_query(pConn, "SELECT @@version");
-	MYSQL_RES* result_ver = mysql_store_result(pConn);
-	MYSQL_ROW row_ver = mysql_fetch_row(result_ver);
-	if (strstr(row_ver[0], pMaria) != NULL)
-	{
-		iMaria = 1;
-	}
-	unsigned int iVLen = sizeof(aVersion) - 1;
-	strncpy(aVersion, row_ver[0], iVLen);
-	aVersion[iVLen] = '\0';
-	if ((unsigned int) atoi(row_ver[0]) >= 8)
-	{
-		iV8 = 1;
-	}
-	mysql_free_result(result_ver);
+	identifyMySQLVersion(pConn, aVersion, pMaria, &iMaria, &iV8, sizeof(aVersion) - 1);
 
 	/* Identify Aurora version, if applicable. */
-	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'aurora_version'");
-	MYSQL_RES* result_aur_ver = mysql_store_result(pConn);
-	MYSQL_ROW row_aur_ver = mysql_fetch_row(result_aur_ver);
-	mysql_free_result(result_aur_ver);
-
-	if (row_aur_ver != NULL)
-	{
-		iAurora = 1;
-		unsigned int iAVLen = sizeof(aAuroraVersion) - 1;
-		strncpy(aAuroraVersion, row_aur_ver[1], iAVLen);
-		aAuroraVersion[iAVLen] = '\0';
-
-		mysql_query(pConn, "SELECT @@aurora_server_id");
-		MYSQL_RES* result_aur_sid = mysql_store_result(pConn);
-		MYSQL_ROW row_aur_sid = mysql_fetch_row(result_aur_sid);
-		mysql_free_result(result_aur_sid);
-
-		unsigned int iASIdLen = sizeof(aAuroraServerId) - 1;
-		strncpy(aAuroraServerId, row_aur_sid[0], iASIdLen);
-		aAuroraServerId[iASIdLen] = '\0';
-	}
+	identifyAuroraVersion(pConn, aAuroraVersion, aAuroraServerId, &iAurora, sizeof(aAuroraVersion) - 1, sizeof(aAuroraServerId) - 1);
 
 	mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* Total queries, not conn questions. */
 	MYSQL_RES* result_queries = mysql_store_result(pConn);
@@ -171,6 +112,7 @@ int main(int iArgCount, char* aArgV[])
 	iOldQueries = (unsigned int) atoi(row_queries[1]);
 	mysql_free_result(result_queries);
 
+	/* Set ncurses colours. */
 	start_color();
 	init_color(COLOR_BLACK, 0, 0, 0); // for Gnome
 	init_pair(1, COLOR_GREEN, COLOR_BLACK);
@@ -506,30 +448,14 @@ int main(int iArgCount, char* aArgV[])
 
 
 /**
-	* Sigint handling based on an example by Greg Kemnitz.
-	*
-	* @param   integer iSig
-	* @return  void
-*/
-
-void signal_handler(int iSig)
-{
-	if (iSig == SIGINT || iSig == SIGTERM || iSig == SIGSEGV)
-	{
-		iSigCaught = 1;
-	}
-}
-
-
-/**
 	* Process command-line switches using getopt()
 	*
 	* @param   int iArgCount, number of arguments
-	* @param   array aArgV, switches
+	* @param   char* aArgV, pointer to aArgV
 	* @return  unsigned integer
 */
 
-unsigned int options(int iArgCount, char* aArgV[])
+unsigned int options(int iArgCount, char* const aArgV[])
 {
 	int iOpts = 0;
 	int iOptsIdx = 0;
@@ -607,7 +533,7 @@ unsigned int options(int iArgCount, char* aArgV[])
 
 
 /**
-	* Display menu.
+	* Display program menu.
 	*
 	* @param   char* pFName, filename from aArgV[0]
 	* @return  void
