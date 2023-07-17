@@ -5,14 +5,14 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.31
+	* @version       0.32
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
 	* Compile:
 	* (Linux GCC x64)
 	*                Required dependencies: libmysqlclient-dev, libncurses5-dev
-	*                gcc mysqltrxmon.c $(mysql_config --cflags) $(mysql_config --libs) -o mysqltrxmon -lncurses -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -std=gnu99 -s
+	*                gcc mysqltrxmon.c $(mysql_config --cflags) $(mysql_config --libs) -o mysqltrxmon -I../mysql_include/ -lncurses -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -std=gnu99 -s
 	*
 	* Usage:
 	*                ./mysqltrxmon --help
@@ -20,41 +20,21 @@
 */
 
 
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-
-#include <curses.h>
-#include <getopt.h>
-#include <mysql.h>
+#include <mysql_utils.h>
+#include <mysql_utils.c>
 
 
 #define APP_NAME "MySQLTrxMon"
-#define MB_VERSION "0.31"
+#define MB_VERSION "0.32"
 
 
-void signal_handler(int iSig);
-unsigned int options(int iArgCount, char* aArgV[]);
-int msSleep(unsigned int ms);
-void replaceChar(char* aSQL, char const pOrg, char const pRep);
-void menu(char* const pFName);
+void displayTRXStats(MYSQL* pConn, int* pRow);
 
 
-char* pHost = NULL;
-char* pUser = NULL;
-char* pPassword = NULL;
-char* pLogfile = NULL;
-char* pProgname = NULL;
-char* const pRoot = "root";
-unsigned int iSigCaught = 0;
-unsigned int iPort = 3306;
 unsigned int iTime = 250; // millisecs
 
 
-int main(int iArgCount, char* aArgV[])
+int main(int iArgCount, char* const aArgV[])
 {
 	pProgname = aArgV[0];
 
@@ -65,7 +45,7 @@ int main(int iArgCount, char* aArgV[])
 	}
 
 	MYSQL* pConn;
-	FILE* fp;
+	FILE* fp = NULL;
 	char* const pMaria = "MariaDB";
 	char aHostname[50];
 	char aVersion[7];
@@ -77,12 +57,13 @@ int main(int iArgCount, char* aArgV[])
 	unsigned int iMenu = options(iArgCount, aArgV);
 	unsigned int iPS = 0;
 	unsigned int iAccess = 0;
+	unsigned int iV8 = 0;
 	unsigned int iMaria = 0;
 	unsigned int iAurora = 0;
 	unsigned int iPadWidth = 157; // 164 for 13" MacBook
 	unsigned int iPadHeight = 35; // 30-50; fullscreen terminal differs to windowed
 
-	if (signal(SIGINT, signal_handler) == SIG_ERR)
+	if (signal(SIGINT, signalHandler) == SIG_ERR)
 	{
 		fprintf(stderr, "Signal function registration failed!\n");
 		return EXIT_FAILURE;
@@ -115,6 +96,7 @@ int main(int iArgCount, char* aArgV[])
 
 	initscr();
 
+	/* Check for ncurses colour support. */
 	if (has_colors() == FALSE)
 	{
 		endwin();
@@ -123,56 +105,23 @@ int main(int iArgCount, char* aArgV[])
 		return EXIT_FAILURE;
 	}
 
-	/* Create pad for scrolling. */
+	/* Create ncurses pad for screen scrolling. */
 	WINDOW* pPad = newpad(iPadHeight, iPadWidth);
 	keypad(pPad, TRUE);
 	nodelay(pPad, TRUE);
 	scrollok(pPad, TRUE);
 
 	/* Assign hostname. */
-	mysql_query(pConn, "SELECT @@hostname");
-	MYSQL_RES* result_hn = mysql_store_result(pConn);
-	MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
-	unsigned int iHLen = sizeof(aHostname) - 1;
-	strncpy(aHostname, row_hn[0], iHLen);
-	aHostname[iHLen] = '\0';
-	mysql_free_result(result_hn);
+	assignHostname(pConn, aHostname, sizeof(aHostname) - 1);
 
 	/* Identify MySQL version | MariaDB. */
-	mysql_query(pConn, "SELECT @@version");
-	MYSQL_RES* result_ver = mysql_store_result(pConn);
-	MYSQL_ROW row_ver = mysql_fetch_row(result_ver);
-	if (strstr(row_ver[0], pMaria) != NULL)
-	{
-		iMaria = 1;
-	}
-	unsigned int iVLen = sizeof(aVersion) - 1;
-	strncpy(aVersion, row_ver[0], iVLen);
-	aVersion[iVLen] = '\0';
-	mysql_free_result(result_ver);
+	identifyMySQLVersion(pConn, aVersion, pMaria, &iMaria, &iV8, sizeof(aVersion) - 1);
 
 	/* Identify Aurora version, if applicable. */
-	mysql_query(pConn, "SHOW VARIABLES WHERE Variable_name = 'aurora_version'");
-	MYSQL_RES* result_aur_ver = mysql_store_result(pConn);
-	MYSQL_ROW row_aur_ver = mysql_fetch_row(result_aur_ver);
-	mysql_free_result(result_aur_ver);
+	identifyAuroraVersion(pConn, aAuroraVersion, aAuroraServerId, &iAurora, sizeof(aAuroraVersion) - 1, sizeof(aAuroraServerId) - 1);
 
-	if (row_aur_ver != NULL)
-	{
-		iAurora = 1;
-		unsigned int iAVLen = sizeof(aAuroraVersion) - 1;
-		strncpy(aAuroraVersion, row_aur_ver[1], iAVLen);
-		aAuroraVersion[iAVLen] = '\0';
-
-		mysql_query(pConn, "SELECT @@aurora_server_id");
-		MYSQL_RES* result_aur_sid = mysql_store_result(pConn);
-		MYSQL_ROW row_aur_sid = mysql_fetch_row(result_aur_sid);
-		mysql_free_result(result_aur_sid);
-
-		unsigned int iASIdLen = sizeof(aAuroraServerId) - 1;
-		strncpy(aAuroraServerId, row_aur_sid[0], iASIdLen);
-		aAuroraServerId[iASIdLen] = '\0';
-	}
+	/* Check performance schema availability. */
+	checkPerfSchema(pConn, &iPS);
 
 	/* Create logfile header row. */
 	if (pLogfile != NULL)
@@ -181,27 +130,24 @@ int main(int iArgCount, char* aArgV[])
 
 		if (fp == NULL)
 		{
-			fprintf(stderr, "\nCannot write to logfile.\n\n");
+			fprintf(stderr, "\nExited: cannot write to logfile.\n\n");
 			mysql_close(pConn);
 			return EXIT_FAILURE;
 		}
 		else
 		{
-			fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n", "trx", "thd", "ps", "exm", "lock", "mod", "afft", "tmpd", "tlock", "noidx", "wait", "start", "secs", "user", "program", "trxstate", "trxopstate", "query");
+			fprintf
+			(
+				fp,
+				"%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s|%s\n",
+				"trx", "thd", "ps", "exm", "lock", "mod", "afft", "tmpd", "tlock", "noidx", "wait", "start", "secs", "user", "program", "trxstate", "trxopstate", "query"
+			);
+
 			fflush(fp); /* Output header row immediately. */
 		}
 	}
 
-	/* Check performance schema availability. */
-	mysql_query(pConn, "SELECT @@performance_schema");
-	MYSQL_RES* result_ps = mysql_store_result(pConn);
-	MYSQL_ROW row_ps = mysql_fetch_row(result_ps);
-	if (strstr(row_ps[0], "1") != NULL)
-	{
-		iPS = 1;
-	}
-	mysql_free_result(result_ps);
-
+	/* Set ncurses colours. */
 	start_color();
 	init_color(COLOR_BLACK, 0, 0, 0); // for Gnome
 	init_pair(1, COLOR_GREEN, COLOR_BLACK);
@@ -252,28 +198,10 @@ int main(int iArgCount, char* aArgV[])
 		if (mysql_errno(pConn) == 0)
 		{
 			iAccess = 1;
-		}
-
-		if (iAccess == 1)
-		{
 			MYSQL_ROW row_acttr = mysql_fetch_row(result_acttr);
 			attrset(A_BOLD | COLOR_PAIR(4));
 			mvprintw(iRow += 2, 1, "trx: %s", row_acttr[0]);
-
-			/* TRX Lock Waits */
-			mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX WHERE trx_state = 'LOCK WAIT'");
-			MYSQL_RES* result_trlk = mysql_store_result(pConn);
-			MYSQL_ROW row_trlk = mysql_fetch_row(result_trlk);
-			mvprintw(iRow += 1, 1, "lwa: %s", row_trlk[0]);
-			mysql_free_result(result_trlk);
-
-			/* History List Length */
-			mysql_query(pConn, "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE NAME = 'trx_rseg_history_len'");
-			MYSQL_RES* result_hll = mysql_store_result(pConn);
-			MYSQL_ROW row_hll = mysql_fetch_row(result_hll);
-			mvprintw(iRow += 1, 1, "hll: %s", row_hll[0]);
-			attrset(A_NORMAL);
-			mysql_free_result(result_hll);
+			displayTRXStats(pConn, &iRow);
 		}
 
 		mysql_free_result(result_acttr);
@@ -386,8 +314,16 @@ int main(int iArgCount, char* aArgV[])
 
 					if (pLogfile != NULL)
 					{
-						fprintf(fp, "%s|%s|%s|%s|%s|%s|%s|%s|%s|%c|%s|%s|%s|%s|%s|%s|%s|%s;\n", row_trx[0], row_trx[1], row_trx[2], row_trx[3], row_trx[4], row_trx[5], row_trx[6], row_trx[7], row_trx[8], idx, row_trx[10], row_trx[11], row_trx[12], row_trx[13], row_trx[17], row_trx[14], row_trx[15], row_trx[16]);
-						//fflush(fp); /* Prefer default OS buffering over immediate flushing with fflush() */
+						fprintf
+						(
+							fp,
+							"%s|%s|%s|%s|%s|%s|%s|%s|%s|%c|%s|%s|%s|%s|%s|%s|%s|%s;\n",
+							row_trx[0], row_trx[1], row_trx[2], row_trx[3], row_trx[4], row_trx[5], row_trx[6], row_trx[7], row_trx[8],
+							idx,
+							row_trx[10], row_trx[11], row_trx[12], row_trx[13], row_trx[17], row_trx[14], row_trx[15], row_trx[16]
+						);
+
+						//fflush(fp); /* Prefer default OS buffering over immediate flushing of fflush() */
 					}
 				}
 
@@ -396,6 +332,7 @@ int main(int iArgCount, char* aArgV[])
 
 			mysql_free_result(result_trx);
 
+			/* ncurses pad scrolling. */
 			iCh = wgetch(pPad);
 
 			switch (iCh)
@@ -441,19 +378,29 @@ int main(int iArgCount, char* aArgV[])
 
 
 /**
-	* Sigint handling.
-	* Based on example by Greg Kemnitz.
+	* Display TRX Lock Wait and HLL stats.
 	*
-	* @param   integer iSig
+	* @param   MYSQL* pConn, connection pointer
+	* @param   int* pRow, pointer to iRow
 	* @return  void
 */
 
-void signal_handler(int iSig)
+void displayTRXStats(MYSQL* pConn, int* pRow)
 {
-	if (iSig == SIGINT || iSig == SIGTERM || iSig == SIGSEGV)
-	{
-		iSigCaught = 1;
-	}
+	/* TRX Lock Waits */
+	mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX WHERE trx_state = 'LOCK WAIT'");
+	MYSQL_RES* result_trlk = mysql_store_result(pConn);
+	MYSQL_ROW row_trlk = mysql_fetch_row(result_trlk);
+	mvprintw(*pRow += 1, 1, "lwa: %s", row_trlk[0]);
+	mysql_free_result(result_trlk);
+
+	/* History List Length */
+	mysql_query(pConn, "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE NAME = 'trx_rseg_history_len'");
+	MYSQL_RES* result_hll = mysql_store_result(pConn);
+	MYSQL_ROW row_hll = mysql_fetch_row(result_hll);
+	mvprintw(*pRow += 1, 1, "hll: %s", row_hll[0]);
+	attrset(A_NORMAL);
+	mysql_free_result(result_hll);
 }
 
 
@@ -461,11 +408,11 @@ void signal_handler(int iSig)
 	* Process command-line switches using getopt()
 	*
 	* @param   integer iArgCount, number of arguments
-	* @param   array aArgV, switches
+	* @param   char* aArgV, pointer to aArgV
 	* @return  unsigned integer
 */
 
-unsigned int options(int iArgCount, char* aArgV[])
+unsigned int options(int iArgCount, char* const aArgV[])
 {
 	int iOpts = 0;
 	int iOptsIdx = 0;
@@ -499,7 +446,7 @@ unsigned int options(int iArgCount, char* aArgV[])
 
 			case 't':
 				iTime = (unsigned int) atoi(optarg);
-				if (iTime < 100) {iTime = 100;} /* breakdown in behaviour below 100ms */
+				if (iTime < 100) {iTime = 100;} /* Breakdown in behaviour below 100ms. */
 				if (iTime > 2000) {iTime = 2000;}
 				break;
 
@@ -553,60 +500,7 @@ unsigned int options(int iArgCount, char* aArgV[])
 
 
 /**
-	* Use nanosleep() instead of unreliable usleep().
-	* Credit: Sunny Shukia.
-	*
-	* @param   unsigned integer ms, milliseconds
-	* @return  signed integer
-*/
-
-int msSleep(unsigned int ms)
-{
-	struct timespec rem;
-
-	struct timespec req =
-	{
-		(int) (ms / 1000),
-		(ms % 1000) * 1000000
-	};
-
-	return nanosleep(&req, &rem);
-}
-
-
-/**
-	* Character replacement to clean multi-line SQL strings.
-	* Credit: Fabio Cabral.
-	*
-	* @param   array aSQL, SQL string
-	* @param   char cOrg, original character
-	* @param   char cRep, replacement character
-	* @return  void
-*/
-
-void replaceChar(char* const aSQL, char const cOrg, char const cRep) {
-
-	char* src;
-	char* dst;
-
-	for (src = dst = aSQL; *src != '\0'; src++)
-	{
-		*dst = *src;
-
-		if (*dst == cOrg)
-		{
-			*dst = cRep;
-		}
-
-		dst++;
-	}
-
-	*dst = '\0';
-}
-
-
-/**
-	* Display menu.
+	* Display program menu.
 	*
 	* @param   char* pFName, filename from aArgV[0]
 	* @return  void
