@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.32
+	* @version       0.33
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -25,7 +25,7 @@
 
 
 #define APP_NAME "MySQLTrxMon"
-#define MB_VERSION "0.32"
+#define MB_VERSION "0.33"
 
 
 void displayTRXStats(MYSQL* pConn, int* pRow);
@@ -209,7 +209,7 @@ int main(int iArgCount, char* const aArgV[])
 		if (iPS == 0)
 		{
 			attrset(A_BOLD | COLOR_PAIR(4));
-			mvprintw(iRow += 2, 1, "performance schema disabled");
+			mvprintw(iRow += 4, 1, "performance schema disabled");
 			attrset(A_NORMAL);
 		}
 
