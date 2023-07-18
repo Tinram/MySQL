@@ -5,14 +5,14 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/07/2022
-	* @version       0.23 (from mysqltrxmon)
+	* @version       0.24 (from mysqltrxmon)
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
 	* Compile:
 	* (Linux GCC x64)
 	*                Required dependencies: libmysqlclient-dev, libncurses5-dev
-	*                gcc mysqllockmon.c $(mysql_config --cflags) $(mysql_config --libs) -o mysqllockmon -lncurses -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -std=gnu99 -s
+	*                gcc mysqllockmon.c $(mysql_config --cflags) $(mysql_config --libs) -o mysqllockmon -I../mysql_include/ -lncurses -Ofast -Wall -Wextra -Wuninitialized -Wunused -Werror -std=gnu99 -s
 	*
 	* Usage:
 	*                ./mysqllockmon --help
@@ -20,37 +20,21 @@
 */
 
 
-#include <signal.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <unistd.h>
-
-#include <curses.h>
-#include <getopt.h>
-#include <mysql.h>
+#include <mysql_utils.h>
+#include <mysql_utils.c>
 
 
 #define APP_NAME "MySQLLockMon"
-#define MB_VERSION "0.23"
+#define MB_VERSION "0.24"
 
 
-void signal_handler(int iSig);
-unsigned int options(int iArgCount, char* aArgV[]);
-int msSleep(unsigned int ms);
-void replaceChar(char* aSQL, char const pOrg, char const pRep);
-void menu(char* const pFName);
+void displayTransactions(MYSQL* pConn, int* pRow);
+void displayInnoDB(MYSQL* pConn, int* pRow);
+void displayTableLockWaits(MYSQL* pConn, int* pRow, unsigned int* pMDL);
+void displayMetadata(MYSQL* pConn, int* pRow, unsigned int* pMDL, unsigned int* pV8);
 
 
-char* pHost = NULL;
-char* pUser = NULL;
-char* pPassword = NULL;
-char* pProgname = NULL;
-char* const pRoot = "root";
-unsigned int iPort = 3306;
 unsigned int iTime = 250; // millisecs
-unsigned int iSigCaught = 0;
 
 
 int main(int iArgCount, char* aArgV[])
@@ -63,19 +47,32 @@ int main(int iArgCount, char* aArgV[])
 		return EXIT_FAILURE;
 	}
 
+	typedef enum
+	{
+		TRANSACTIONS,
+		INNODB_LOCK_WAITS,
+		TABLE_LOCK_WAITS,
+		METADATA_LOCKS
+	} LockType;
+
 	MYSQL* pConn;
+	char* const pMaria = "MariaDB";
+	char aHostname[50];
+	char aVersion[7];
+	char aAuroraVersion[9];
+	char aAuroraServerId[50];
+	int iRow = 0;
+	int iKey = 0;
 	unsigned int iMenu = options(iArgCount, aArgV);
 	unsigned int iV8 = 0;
 	unsigned int iPS = 0;
+	unsigned int iMaria = 0;
+	unsigned int iAurora = 0;
 	unsigned int iAccess = 0;
 	unsigned int iMDL = 0;
-	int iRow = 0;
-	int iKey = 0;
-	char cDisplay = 'T'; /* TRX display default. */
-	char aHostname[50];
-	char aVersion[7];
+	LockType displayChoice_t = TRANSACTIONS;
 
-	if (signal(SIGINT, signal_handler) == SIG_ERR)
+	if (signal(SIGINT, signalHandler) == SIG_ERR)
 	{
 		fprintf(stderr, "Signal function registration failed!\n");
 		return EXIT_FAILURE;
@@ -111,6 +108,7 @@ int main(int iArgCount, char* aArgV[])
 	nodelay(stdscr, TRUE);
 	keypad(stdscr, TRUE);
 
+	/* Check for ncurses colour support. */
 	if (has_colors() == FALSE)
 	{
 		endwin();
@@ -120,37 +118,26 @@ int main(int iArgCount, char* aArgV[])
 	}
 
 	/* Assign hostname. */
-	mysql_query(pConn, "SELECT @@hostname");
-	MYSQL_RES* result_hn = mysql_store_result(pConn);
-	MYSQL_ROW row_hn = mysql_fetch_row(result_hn);
-	unsigned int iHLen = sizeof(aHostname) - 1;
-	strncpy(aHostname, row_hn[0], iHLen);
-	aHostname[iHLen] = '\0';
-	mysql_free_result(result_hn);
+	assignHostname(pConn, aHostname, sizeof(aHostname) - 1);
 
 	/* Identify MySQL version. */
-	mysql_query(pConn, "SELECT @@version");
-	MYSQL_RES* result_ver = mysql_store_result(pConn);
-	MYSQL_ROW row_ver = mysql_fetch_row(result_ver);
-	unsigned int iVLen = sizeof(aVersion) - 1;
-	strncpy(aVersion, row_ver[0], iVLen);
-	aVersion[iVLen] = '\0';
-	if ((unsigned int) atoi(row_ver[0]) >= 8)
-	{
-		iV8 = 1;
-	}
-	mysql_free_result(result_ver);
+	identifyMySQLVersion(pConn, aVersion, pMaria, &iMaria, &iV8, sizeof(aVersion) - 1);
+
+	/* Identify Aurora version, if applicable. */
+	identifyAuroraVersion(pConn, aAuroraVersion, aAuroraServerId, &iAurora, sizeof(aAuroraVersion) - 1, sizeof(aAuroraServerId) - 1);
 
 	/* Check performance schema availability. */
-	mysql_query(pConn, "SELECT @@performance_schema");
-	MYSQL_RES* result_ps = mysql_store_result(pConn);
-	MYSQL_ROW row_ps = mysql_fetch_row(result_ps);
-	if (strstr(row_ps[0], "1") != NULL)
-	{
-		iPS = 1;
-	}
-	mysql_free_result(result_ps);
+	checkPerfSchema(pConn, &iPS);
 
+	if (iMaria == 1)
+	{
+		endwin();
+		fprintf(stderr, "\nMariaDB is not supported.\n\n");
+		mysql_close(pConn);
+		return EXIT_FAILURE;
+	}
+
+	/* Set ncurses colours. */
 	start_color();
 	init_color(COLOR_BLACK, 0, 0, 0); // for Gnome
 	init_pair(1, COLOR_GREEN, COLOR_BLACK);
@@ -167,11 +154,26 @@ int main(int iArgCount, char* aArgV[])
 
 		mvprintw(iRow, 1, APP_NAME);
 		iRow += 2;
+
 		attron(A_BOLD);
-		mvprintw(iRow, 1, "%s", aHostname);
+		if (iAurora == 0)
+		{
+			mvprintw(iRow, 1, aHostname);
+		}
+		else
+		{
+			mvprintw(iRow, 1, aAuroraServerId);
+		}
 		attroff(A_BOLD);
-		iRow++;
-		mvprintw(iRow, 1, "%s", aVersion);
+
+		if (iAurora == 0)
+		{
+			mvprintw(iRow += 1, 1, aVersion);
+		}
+		else
+		{
+			mvprintw(iRow += 1, 1, "%s (au: %s)", aVersion, aAuroraVersion);
+		}
 
 		/* TRX at InnoDB layer. */
 		mysql_query(pConn, "SELECT COUNT(*) FROM information_schema.INNODB_TRX"); /* Includes RUNNING, LOCK WAIT, ROLLING BACK, COMMITTING */
@@ -180,10 +182,6 @@ int main(int iArgCount, char* aArgV[])
 		if (mysql_errno(pConn) == 0)
 		{
 			iAccess = 1;
-		}
-
-		if (iAccess == 1)
-		{
 			MYSQL_ROW row_acttr = mysql_fetch_row(result_acttr);
 			attrset(COLOR_PAIR(4));
 			mvprintw(iRow += 2, 1, "trx: %s", row_acttr[0]);
@@ -196,7 +194,7 @@ int main(int iArgCount, char* aArgV[])
 			attrset(A_NORMAL);
 			mysql_free_result(result_hll);
 
-			if (iMDL != 1)
+			if (iMDL != 1 && iPS == 1)
 			{
 				mysql_query(pConn, "SELECT ENABLED FROM performance_schema.setup_instruments WHERE NAME = 'wait/lock/metadata/sql/mdl'");
 				MYSQL_RES* result_mdl = mysql_store_result(pConn);
@@ -217,31 +215,28 @@ int main(int iArgCount, char* aArgV[])
 
 		mysql_free_result(result_acttr);
 
-		if (iPS == 0)
-		{
-			attrset(A_BOLD | COLOR_PAIR(4));
-			mvprintw(iRow += 2, 1, "performance schema disabled");
-			attrset(A_NORMAL);
-		}
+
+		/* The following is to work around ncurses loop peculiarities. */
 
 		iKey = getch();
 
 		if (iKey == KEY_UP)
 		{
-			cDisplay = 'T'; /* TRX */
+			displayChoice_t = TRANSACTIONS;
 		}
 		else if (iKey == KEY_DOWN)
 		{
-			cDisplay = 'I'; /* InnoDB locks */
+			displayChoice_t = INNODB_LOCK_WAITS;
 		}
 		else if (iKey == KEY_LEFT)
 		{
-			cDisplay = 'L'; /* table lock waits */
+			displayChoice_t = TABLE_LOCK_WAITS;
 		}
 		else if (iKey == KEY_RIGHT)
 		{
-			cDisplay = 'M'; /* metadata locks */
+			displayChoice_t = METADATA_LOCKS;
 		}
+
 
 		if (iAccess == 0)
 		{
@@ -249,404 +244,29 @@ int main(int iArgCount, char* aArgV[])
 			mvprintw(iRow += 2, 1, "no user privilege access");
 			attrset(A_NORMAL);
 		}
-		else if (cDisplay == 'T')
+		else if (iPS == 0)
 		{
-			mysql_query(pConn, "\
-				SELECT \
-					thd.THREAD_ID, thd.PROCESSLIST_ID, stmt.ROWS_EXAMINED, trx.trx_rows_locked, trx.trx_rows_modified, stmt.ROWS_AFFECTED, stmt.CREATED_TMP_DISK_TABLES, trx.trx_tables_locked, stmt.NO_INDEX_USED, ROUND(stmt.TIMER_WAIT/1000000000000, 4), trx.trx_started, TO_SECONDS(NOW()) - TO_SECONDS(trx.trx_started), thd.PROCESSLIST_USER, trx.trx_state, trx.trx_operation_state, stmt.SQL_TEXT \
-				FROM \
-					information_schema.INNODB_TRX trx \
-				INNER JOIN \
-					performance_schema.threads thd ON thd.PROCESSLIST_ID = trx.trx_mysql_thread_id \
-				INNER JOIN \
-					performance_schema.events_statements_current stmt USING (THREAD_ID) \
-			");
-
-			MYSQL_RES* result_q = mysql_store_result(pConn);
-			MYSQL_ROW row_res;
-
-			iRow += 3;
-			attrset(A_BOLD | COLOR_PAIR(2));
-			mvprintw(iRow, 1, "transactions");
+			attrset(A_BOLD | COLOR_PAIR(4));
+			mvprintw(iRow += 2, 1, "performance schema disabled");
 			attrset(A_NORMAL);
-			iRow = 12;
-
-			while ((row_res = mysql_fetch_row(result_q)))
-			{
-				if (row_res != NULL)
-				{
-					char idx = (strcmp("1", row_res[8]) == 1) ? 'N' : 'Y'; // NO_INDEX_USED -> reversal
-
-					mvprintw(iRow, 1, "thd");
-					mvprintw(iRow, 8, "ps");
-					mvprintw(iRow, 18, "exm");
-					mvprintw(iRow, 28, "lock");
-					mvprintw(iRow, 38, "mod");
-					mvprintw(iRow, 48, "afft");
-					mvprintw(iRow, 58, "tmpd");
-					mvprintw(iRow, 68, "tlk");
-					mvprintw(iRow, 78, "idx");
-					mvprintw(iRow, 88, "wait");
-					mvprintw(iRow, 100, "start");
-					mvprintw(iRow, 124, "sec");
-					mvprintw(iRow, 135, "user");
-
-					attrset(A_BOLD | COLOR_PAIR(1));
-					iRow++;
-
-					mvprintw(iRow, 1, row_res[0]);
-					mvprintw(iRow, 8, row_res[1]);
-					mvprintw(iRow, 18, row_res[2]);
-					mvprintw(iRow, 28, row_res[3]);
-					mvprintw(iRow, 38, row_res[4]);
-					mvprintw(iRow, 48, row_res[5]);
-					mvprintw(iRow, 58, row_res[6]);
-					mvprintw(iRow, 68, row_res[7]);
-					mvprintw(iRow, 78, "%c", idx);
-					mvprintw(iRow, 88, row_res[9]);
-					mvprintw(iRow, 100, row_res[10]);
-					mvprintw(iRow, 124, row_res[11]);
-					mvprintw(iRow, 135, row_res[12]);
-
-					attrset(A_NORMAL);
-					attron(COLOR_PAIR(5));
-					mvprintw(iRow += 2, 1, row_res[13]);
-					attroff(COLOR_PAIR(5));
-
-					if (row_res[14] != NULL)
-					{
-						attrset(A_BOLD | COLOR_PAIR(3));
-						mvprintw(iRow += 1, 1, row_res[14]);
-						attrset(A_NORMAL);
-					}
-
-					if (row_res[15] != NULL)
-					{
-						/* Truncate SQL at ~2 lines */
-						char aQuery[300];
-						unsigned int iQLen = sizeof(aQuery) - 1;
-						strncpy(aQuery, row_res[15], iQLen);
-						aQuery[iQLen] = '\0';
-
-						/* Remove LFs. */
-						replaceChar(aQuery, '\n', ' ');
-
-						attron(COLOR_PAIR(2));
-						mvprintw(iRow += 1, 1, "%s", aQuery);
-						attroff(COLOR_PAIR(2));
-					}
-				}
-
-				iRow += 4;
-			}
-
-			mysql_free_result(result_q);
 		}
-		else if (cDisplay == 'I')
+		else
 		{
-			mysql_query(pConn, "\
-				SELECT \
-					wait_age_secs, locked_table, locked_index, locked_type, waiting_trx_rows_locked, waiting_trx_rows_modified, waiting_query, waiting_lock_mode, blocking_pid, blocking_query, blocking_lock_mode, blocking_trx_age, blocking_trx_rows_locked, blocking_trx_rows_modified, sql_kill_blocking_query \
-				FROM \
-					sys.innodb_lock_waits \
-			");
-
-			MYSQL_RES* result_q = mysql_store_result(pConn);
-			MYSQL_ROW row_res;
-
-			iRow += 3;
-			attrset(A_BOLD | COLOR_PAIR(2));
-			mvprintw(iRow, 1, "innodb lock waits");
-			attrset(A_NORMAL);
-			iRow = 12;
-
-			while ((row_res = mysql_fetch_row(result_q)))
+			if (displayChoice_t == TRANSACTIONS)
 			{
-				if (row_res != NULL)
-				{
-					mvprintw(iRow, 1, "locked table");
-					iRow++;
-					attrset(A_BOLD | COLOR_PAIR(1));
-					mvprintw(iRow, 1, row_res[1]);
-					attrset(A_NORMAL);
-
-					iRow += 2;
-					mvprintw(iRow, 1, "wait/s");
-					mvprintw(iRow, 10, "lkd index");
-					mvprintw(iRow, 24, "lkd type");
-					mvprintw(iRow, 37, "w-lkd");
-					mvprintw(iRow, 47, "w-mod");
-					mvprintw(iRow, 57, "w-mode");
-					mvprintw(iRow, 75, "b-pid");
-					mvprintw(iRow, 85, "b-mode");
-					mvprintw(iRow, 104, "b-lkd");
-					mvprintw(iRow, 113, "b-mod");
-					mvprintw(iRow, 126, "b-time");
-
-					iRow++;
-					attrset(A_BOLD | COLOR_PAIR(1));
-
-					mvprintw(iRow, 1, row_res[0]);
-					mvprintw(iRow, 10, row_res[2]);
-					mvprintw(iRow, 24, row_res[3]);
-					mvprintw(iRow, 37, row_res[4]);
-					mvprintw(iRow, 47, row_res[5]);
-					mvprintw(iRow, 57, row_res[7]);
-					mvprintw(iRow, 75, row_res[8]);
-					mvprintw(iRow, 85, row_res[10]);
-					mvprintw(iRow, 104, row_res[12]);
-					mvprintw(iRow, 113, row_res[13]);
-					mvprintw(iRow, 126, row_res[11]);
-
-					if (row_res[6] != NULL)
-					{
-						char aQuery[300];
-						unsigned int iQLen = sizeof(aQuery) - 1;
-						strncpy(aQuery, row_res[6], iQLen);
-						aQuery[iQLen] = '\0';
-
-						/* Remove LFs. */
-						replaceChar(aQuery, '\n', ' ');
-
-						attron(COLOR_PAIR(5));
-						mvprintw(iRow += 2, 1, "%s", aQuery);
-						attroff(COLOR_PAIR(5));
-					}
-
-					if (row_res[9] != NULL)
-					{
-						char aQuery[300];
-						unsigned int iQLen = sizeof(aQuery) - 1;
-						strncpy(aQuery, row_res[9], iQLen);
-						aQuery[iQLen] = '\0';
-
-						/* Remove LFs. */
-						replaceChar(aQuery, '\n', ' ');
-
-						attron(COLOR_PAIR(5));
-						mvprintw(iRow += 1, 1, "%s", aQuery);
-						attroff(COLOR_PAIR(5));
-					}
-
-					attrset(A_NORMAL);
-					attron(COLOR_PAIR(5));
-					mvprintw(iRow += 1, 1, row_res[14]);
-					attroff(COLOR_PAIR(5));
-				}
-
-				iRow += 3;
+				displayTransactions(pConn, &iRow);
 			}
-
-			mysql_free_result(result_q);
-		}
-		else if (cDisplay == 'L')
-		{
-			if (iMDL == 0)
+			else if (displayChoice_t == INNODB_LOCK_WAITS)
 			{
-				attrset(A_BOLD | COLOR_PAIR(4));
-				mvprintw(iRow += 2, 1, "p_s metadata lock instrumentation disabled");
-				attrset(A_NORMAL);
+				displayInnoDB(pConn, &iRow);
 			}
-
-			mysql_query(pConn, "\
-				SELECT \
-					object_schema, object_name, waiting_account, waiting_lock_type, waiting_lock_duration, waiting_query, waiting_query_secs, waiting_query_rows_affected, waiting_query_rows_examined, blocking_pid, blocking_account, blocking_lock_type, blocking_lock_duration, sql_kill_blocking_query \
-				FROM \
-					sys.schema_table_lock_waits \
-			");
-
-			MYSQL_RES* result_q = mysql_store_result(pConn);
-			MYSQL_ROW row_res;
-
-			iRow += 3;
-			attrset(A_BOLD | COLOR_PAIR(2));
-			mvprintw(iRow, 1, "table lock waits");
-			attrset(A_NORMAL);
-			iRow = 12;
-
-			while ((row_res = mysql_fetch_row(result_q)))
+			else if (displayChoice_t == TABLE_LOCK_WAITS)
 			{
-				if (row_res != NULL)
-				{
-					mvprintw(iRow, 1, "db");
-					mvprintw(iRow, 22, "table");
-					iRow++;
-					attrset(A_BOLD | COLOR_PAIR(1));
-					mvprintw(iRow, 1, row_res[0]);
-					mvprintw(iRow, 22, row_res[1]);
-					attrset(A_NORMAL);
-
-					iRow += 2;
-					mvprintw(iRow, 1, "wait user");
-					mvprintw(iRow, 22, "wait lock");
-					mvprintw(iRow, 46, "duration");
-					mvprintw(iRow, 62, "sec");
-					mvprintw(iRow, 70, "aff");
-					mvprintw(iRow, 79, "exm");
-					mvprintw(iRow, 89, "bpid");
-					mvprintw(iRow, 97, "block user");
-					mvprintw(iRow, 119, "block lock");
-					mvprintw(iRow, 138, "duration");
-
-					iRow++;
-					attrset(A_BOLD | COLOR_PAIR(1));
-
-					mvprintw(iRow, 1, row_res[2]);
-					mvprintw(iRow, 22, row_res[3]);
-					mvprintw(iRow, 46, row_res[4]);
-					mvprintw(iRow, 62, row_res[6]);
-					(row_res[7] != NULL) ? mvprintw(iRow, 70, row_res[7]) : mvprintw(iRow, 70, "-");
-					(row_res[8] != NULL) ? mvprintw(iRow, 79, row_res[8]) : mvprintw(iRow, 79, "-");
-					mvprintw(iRow, 89, row_res[9]);
-					mvprintw(iRow, 97, row_res[10]);
-					mvprintw(iRow, 119, row_res[11]);
-					mvprintw(iRow, 138, row_res[12]);
-
-					if (row_res[5] != NULL)
-					{
-						char aQuery[300];
-						unsigned int iQLen = sizeof(aQuery) - 1;
-						strncpy(aQuery, row_res[5], iQLen);
-						aQuery[iQLen] = '\0';
-
-						/* Replace TABs and LFs. */
-						replaceChar(aQuery, '\t', ' ');
-						replaceChar(aQuery, '\n', ' ');
-
-						attron(COLOR_PAIR(5));
-						mvprintw(iRow += 2, 1, "%s", aQuery);
-						attroff(COLOR_PAIR(5));
-					}
-
-					attrset(A_NORMAL);
-
-					attron(COLOR_PAIR(5));
-					mvprintw(iRow += 1, 1, row_res[13]);
-					attroff(COLOR_PAIR(5));
-				}
-
-				iRow += 3;
+				displayTableLockWaits(pConn, &iRow, &iMDL);
 			}
-
-			mysql_free_result(result_q);
-		}
-		else if (cDisplay == 'M')
-		{
-			if (iMDL == 0)
+			else if (displayChoice_t == METADATA_LOCKS)
 			{
-				attrset(A_BOLD | COLOR_PAIR(4));
-				mvprintw(iRow += 2, 1, "p_s metadata lock instrumentation disabled");
-				attrset(A_NORMAL);
-			}
-
-			if (iV8 != 1) /* v.5.7 */
-			{
-				mysql_query(pConn, "\
-					SELECT \
-						OBJECT_TYPE, OBJECT_SCHEMA, OBJECT_NAME, LOCK_TYPE, LOCK_DURATION, LOCK_STATUS, OWNER_THREAD_ID  \
-					FROM \
-						performance_schema.metadata_locks \
-					WHERE \
-						OBJECT_SCHEMA <> 'performance_schema' \
-				");
-					/* Join on sys.session is simply too expensive: 50 QPS >> 2500+ QPS */
-
-				MYSQL_RES* result_q = mysql_store_result(pConn);
-				MYSQL_ROW row_res;
-
-				iRow += 3;
-				attrset(A_BOLD | COLOR_PAIR(2));
-				mvprintw(iRow, 1, "metadata locks");
-				attrset(A_NORMAL);
-				iRow = 12;
-
-				while ((row_res = mysql_fetch_row(result_q)))
-				{
-					if (row_res != NULL)
-					{
-						mvprintw(iRow, 1, "db");
-						mvprintw(iRow, 22, "table");
-						mvprintw(iRow, 45, "obj");
-						mvprintw(iRow, 65, "lock type");
-						mvprintw(iRow, 95, "duration");
-						mvprintw(iRow, 115, "status");
-						mvprintw(iRow, 130, "id");
-
-						iRow++;
-						attrset(A_BOLD | COLOR_PAIR(1));
-
-						(row_res[1] != NULL) ? mvprintw(iRow, 1, row_res[1]) : mvprintw(iRow, 1, "-");
-						(row_res[2] != NULL) ? mvprintw(iRow, 22, row_res[2]) : mvprintw(iRow, 22, "-");
-						mvprintw(iRow, 45, row_res[0]);
-						mvprintw(iRow, 65, row_res[3]);
-						mvprintw(iRow, 95, row_res[4]);
-						mvprintw(iRow, 115, row_res[5]);
-						mvprintw(iRow, 130, row_res[6]);
-
-						attrset(A_NORMAL);
-					}
-
-					iRow += 2;
-				}
-
-				mysql_free_result(result_q);
-			}
-			else /* v.8.0+ */
-			{
-				mysql_query(pConn, "\
-					SELECT \
-						OBJECT_TYPE, ML.OBJECT_SCHEMA, ML.OBJECT_NAME, ML.LOCK_TYPE, DL.LOCK_MODE, DL.LOCK_TYPE, ML.LOCK_DURATION, DL.LOCK_STATUS, ML.OWNER_THREAD_ID \
-					FROM \
-						performance_schema.metadata_locks ML \
-					LEFT JOIN \
-						performance_schema.data_locks DL ON DL.THREAD_ID = ML.OWNER_THREAD_ID \
-					WHERE \
-						ML.OBJECT_SCHEMA NOT IN ('information_schema', 'mysql', 'performance_schema') \
-				");
-
-				MYSQL_RES* result_q = mysql_store_result(pConn);
-				MYSQL_ROW row_res;
-
-				iRow += 3;
-				attrset(A_BOLD | COLOR_PAIR(2));
-				mvprintw(iRow, 1, "metadata locks");
-				attrset(A_NORMAL);
-				iRow = 12;
-
-				while ((row_res = mysql_fetch_row(result_q)))
-				{
-					if (row_res != NULL)
-					{
-						mvprintw(iRow, 1, "db");
-						mvprintw(iRow, 22, "table");
-						mvprintw(iRow, 40, "obj");
-						mvprintw(iRow, 53, "type");
-						mvprintw(iRow, 76, "mode");
-						mvprintw(iRow, 98, "type");
-						mvprintw(iRow, 109, "duration");
-						mvprintw(iRow, 124, "status");
-						mvprintw(iRow, 136, "id");
-
-						iRow++;
-						attrset(A_BOLD | COLOR_PAIR(1));
-
-						(row_res[1] != NULL) ? mvprintw(iRow, 1, row_res[1]) : mvprintw(iRow, 1, "-");
-						(row_res[2] != NULL) ? mvprintw(iRow, 22, row_res[2]) : mvprintw(iRow, 22, "-");
-						mvprintw(iRow, 40, row_res[0]);
-						mvprintw(iRow, 53, row_res[3]);
-						(row_res[4] != NULL) ? mvprintw(iRow, 76, row_res[4]) : mvprintw(iRow, 76, "-");
-						(row_res[5] != NULL) ? mvprintw(iRow, 98, row_res[5]) : mvprintw(iRow, 98, "-");
-						mvprintw(iRow, 109, row_res[6]);
-						(row_res[7] != NULL) ? mvprintw(iRow, 124, row_res[7]) : mvprintw(iRow, 124, "-");
-						mvprintw(iRow, 136, row_res[8]);
-
-						attrset(A_NORMAL);
-					}
-
-					iRow += 2;
-				}
-
-				mysql_free_result(result_q);
+				displayMetadata(pConn, &iRow, &iMDL, &iV8);
 			}
 		}
 
@@ -666,18 +286,453 @@ int main(int iArgCount, char* aArgV[])
 
 
 /**
-	* Sigint handling.
-	* Based on example by Greg Kemnitz.
+	* Transactions display.
 	*
-	* @param   integer iSig
+	* @param   MYSQL* pConn, connection pointer
+	* @param   int* pRow, pointer to iRow
 	* @return  void
 */
 
-void signal_handler(int iSig)
+void displayTransactions(MYSQL* pConn, int* pRow)
 {
-	if (iSig == SIGINT || iSig == SIGTERM || iSig == SIGSEGV)
+	int iRow = *pRow;
+
+	mysql_query(pConn, "\
+		SELECT \
+			thd.THREAD_ID, thd.PROCESSLIST_ID, stmt.ROWS_EXAMINED, trx.trx_rows_locked, trx.trx_rows_modified, stmt.ROWS_AFFECTED, stmt.CREATED_TMP_DISK_TABLES, trx.trx_tables_locked, stmt.NO_INDEX_USED, ROUND(stmt.TIMER_WAIT/1000000000000, 4), trx.trx_started, TO_SECONDS(NOW()) - TO_SECONDS(trx.trx_started), thd.PROCESSLIST_USER, trx.trx_state, trx.trx_operation_state, stmt.SQL_TEXT \
+		FROM \
+			information_schema.INNODB_TRX trx \
+		INNER JOIN \
+			performance_schema.threads thd ON thd.PROCESSLIST_ID = trx.trx_mysql_thread_id \
+		INNER JOIN \
+			performance_schema.events_statements_current stmt USING (THREAD_ID) \
+	");
+
+	MYSQL_RES* result_q = mysql_store_result(pConn);
+	MYSQL_ROW row_res;
+
+	iRow += 3;
+	attrset(A_BOLD | COLOR_PAIR(2));
+	mvprintw(iRow, 1, "transactions");
+	attrset(A_NORMAL);
+	iRow = 12;
+
+	while ((row_res = mysql_fetch_row(result_q)))
 	{
-		iSigCaught = 1;
+		if (row_res != NULL)
+		{
+			char idx = (strcmp("1", row_res[8]) == 1) ? 'N' : 'Y'; // NO_INDEX_USED -> reversal
+
+			mvprintw(iRow, 1, "thd");
+			mvprintw(iRow, 8, "ps");
+			mvprintw(iRow, 18, "exm");
+			mvprintw(iRow, 28, "lock");
+			mvprintw(iRow, 38, "mod");
+			mvprintw(iRow, 48, "afft");
+			mvprintw(iRow, 58, "tmpd");
+			mvprintw(iRow, 68, "tlk");
+			mvprintw(iRow, 78, "idx");
+			mvprintw(iRow, 88, "wait");
+			mvprintw(iRow, 100, "start");
+			mvprintw(iRow, 124, "sec");
+			mvprintw(iRow, 135, "user");
+
+			attrset(A_BOLD | COLOR_PAIR(1));
+			iRow++;
+
+			mvprintw(iRow, 1, row_res[0]);
+			mvprintw(iRow, 8, row_res[1]);
+			mvprintw(iRow, 18, row_res[2]);
+			mvprintw(iRow, 28, row_res[3]);
+			mvprintw(iRow, 38, row_res[4]);
+			mvprintw(iRow, 48, row_res[5]);
+			mvprintw(iRow, 58, row_res[6]);
+			mvprintw(iRow, 68, row_res[7]);
+			mvprintw(iRow, 78, "%c", idx);
+			mvprintw(iRow, 88, row_res[9]);
+			mvprintw(iRow, 100, row_res[10]);
+			mvprintw(iRow, 124, row_res[11]);
+			mvprintw(iRow, 135, row_res[12]);
+
+			attrset(A_NORMAL);
+			attron(COLOR_PAIR(5));
+			mvprintw(iRow += 2, 1, row_res[13]);
+			attroff(COLOR_PAIR(5));
+
+			if (row_res[14] != NULL)
+			{
+				attrset(A_BOLD | COLOR_PAIR(3));
+				mvprintw(iRow += 1, 1, row_res[14]);
+				attrset(A_NORMAL);
+			}
+
+			if (row_res[15] != NULL)
+			{
+				/* Truncate SQL at ~2 lines */
+				char aQuery[300];
+				unsigned int iQLen = sizeof(aQuery) - 1;
+				strncpy(aQuery, row_res[15], iQLen);
+				aQuery[iQLen] = '\0';
+
+				/* Remove LFs. */
+				replaceChar(aQuery, '\n', ' ');
+
+				attron(COLOR_PAIR(2));
+				mvprintw(iRow += 1, 1, "%s", aQuery);
+				attroff(COLOR_PAIR(2));
+			}
+		}
+
+		iRow += 4;
+	}
+
+	mysql_free_result(result_q);
+}
+
+
+/**
+	* InnoDB lock waits display.
+	*
+	* @param   MYSQL* pConn, connection pointer
+	* @param   int* pRow, pointer to iRow
+	* @return  void
+*/
+
+void displayInnoDB(MYSQL* pConn, int* pRow)
+{
+	int iRow = *pRow;
+
+	mysql_query(pConn, "\
+		SELECT \
+			wait_age_secs, locked_table, locked_index, locked_type, waiting_trx_rows_locked, waiting_trx_rows_modified, waiting_query, waiting_lock_mode, blocking_pid, blocking_query, blocking_lock_mode, blocking_trx_age, blocking_trx_rows_locked, blocking_trx_rows_modified, sql_kill_blocking_query \
+		FROM \
+			sys.innodb_lock_waits \
+	");
+
+	MYSQL_RES* result_q = mysql_store_result(pConn);
+	MYSQL_ROW row_res;
+
+	iRow += 3;
+	attrset(A_BOLD | COLOR_PAIR(2));
+	mvprintw(iRow, 1, "innodb lock waits");
+	attrset(A_NORMAL);
+	iRow = 12;
+
+	while ((row_res = mysql_fetch_row(result_q)))
+	{
+		if (row_res != NULL)
+		{
+			mvprintw(iRow, 1, "locked table");
+			iRow++;
+			attrset(A_BOLD | COLOR_PAIR(1));
+			mvprintw(iRow, 1, row_res[1]);
+			attrset(A_NORMAL);
+
+			iRow += 2;
+			mvprintw(iRow, 1, "wait/s");
+			mvprintw(iRow, 10, "lkd index");
+			mvprintw(iRow, 24, "lkd type");
+			mvprintw(iRow, 37, "w-lkd");
+			mvprintw(iRow, 47, "w-mod");
+			mvprintw(iRow, 57, "w-mode");
+			mvprintw(iRow, 75, "b-pid");
+			mvprintw(iRow, 85, "b-mode");
+			mvprintw(iRow, 104, "b-lkd");
+			mvprintw(iRow, 113, "b-mod");
+			mvprintw(iRow, 126, "b-time");
+
+			iRow++;
+			attrset(A_BOLD | COLOR_PAIR(1));
+
+			mvprintw(iRow, 1, row_res[0]);
+			mvprintw(iRow, 10, row_res[2]);
+			mvprintw(iRow, 24, row_res[3]);
+			mvprintw(iRow, 37, row_res[4]);
+			mvprintw(iRow, 47, row_res[5]);
+			mvprintw(iRow, 57, row_res[7]);
+			mvprintw(iRow, 75, row_res[8]);
+			mvprintw(iRow, 85, row_res[10]);
+			mvprintw(iRow, 104, row_res[12]);
+			mvprintw(iRow, 113, row_res[13]);
+			mvprintw(iRow, 126, row_res[11]);
+
+			if (row_res[6] != NULL)
+			{
+				char aQuery[300];
+				unsigned int iQLen = sizeof(aQuery) - 1;
+				strncpy(aQuery, row_res[6], iQLen);
+				aQuery[iQLen] = '\0';
+
+				/* Remove LFs. */
+				replaceChar(aQuery, '\n', ' ');
+
+				attron(COLOR_PAIR(5));
+				mvprintw(iRow += 2, 1, "%s", aQuery);
+				attroff(COLOR_PAIR(5));
+			}
+
+			if (row_res[9] != NULL)
+			{
+				char aQuery[300];
+				unsigned int iQLen = sizeof(aQuery) - 1;
+				strncpy(aQuery, row_res[9], iQLen);
+				aQuery[iQLen] = '\0';
+
+				/* Remove LFs. */
+				replaceChar(aQuery, '\n', ' ');
+
+				attron(COLOR_PAIR(5));
+				mvprintw(iRow += 1, 1, "%s", aQuery);
+				attroff(COLOR_PAIR(5));
+			}
+
+			attrset(A_NORMAL);
+			attron(COLOR_PAIR(5));
+			mvprintw(iRow += 1, 1, row_res[14]);
+			attroff(COLOR_PAIR(5));
+		}
+
+		iRow += 3;
+	}
+
+	mysql_free_result(result_q);
+}
+
+
+/**
+	* Table lock waits display.
+	*
+	* @param   MYSQL* pConn, connection pointer
+	* @param   int* pRow, pointer to iRow
+	* @param   int* pRow, pointer to iMDL
+	* @return  void
+*/
+
+void displayTableLockWaits(MYSQL* pConn, int* pRow, unsigned int* pMDL)
+{
+	int iRow = *pRow;
+
+	if (*pMDL == 0)
+	{
+		attrset(A_BOLD | COLOR_PAIR(4));
+		mvprintw(iRow += 3, 1, "p_s metadata lock instrumentation disabled");
+		attrset(A_NORMAL);
+		return;
+	}
+
+	mysql_query(pConn, "\
+		SELECT \
+			object_schema, object_name, waiting_account, waiting_lock_type, waiting_lock_duration, waiting_query, waiting_query_secs, waiting_query_rows_affected, waiting_query_rows_examined, blocking_pid, blocking_account, blocking_lock_type, blocking_lock_duration, sql_kill_blocking_query \
+		FROM \
+			sys.schema_table_lock_waits \
+	");
+
+	MYSQL_RES* result_q = mysql_store_result(pConn);
+	MYSQL_ROW row_res;
+
+	iRow += 3;
+	attrset(A_BOLD | COLOR_PAIR(2));
+	mvprintw(iRow, 1, "table lock waits");
+	attrset(A_NORMAL);
+	iRow = 12;
+
+	while ((row_res = mysql_fetch_row(result_q)))
+	{
+		if (row_res != NULL)
+		{
+			mvprintw(iRow, 1, "db");
+			mvprintw(iRow, 22, "table");
+			iRow++;
+			attrset(A_BOLD | COLOR_PAIR(1));
+			mvprintw(iRow, 1, row_res[0]);
+			mvprintw(iRow, 22, row_res[1]);
+			attrset(A_NORMAL);
+
+			iRow += 2;
+			mvprintw(iRow, 1, "wait user");
+			mvprintw(iRow, 22, "wait lock");
+			mvprintw(iRow, 46, "duration");
+			mvprintw(iRow, 62, "sec");
+			mvprintw(iRow, 70, "aff");
+			mvprintw(iRow, 79, "exm");
+			mvprintw(iRow, 89, "bpid");
+			mvprintw(iRow, 97, "block user");
+			mvprintw(iRow, 119, "block lock");
+			mvprintw(iRow, 138, "duration");
+
+			iRow++;
+			attrset(A_BOLD | COLOR_PAIR(1));
+
+			mvprintw(iRow, 1, row_res[2]);
+			mvprintw(iRow, 22, row_res[3]);
+			mvprintw(iRow, 46, row_res[4]);
+			mvprintw(iRow, 62, row_res[6]);
+			(row_res[7] != NULL) ? mvprintw(iRow, 70, row_res[7]) : mvprintw(iRow, 70, "-");
+			(row_res[8] != NULL) ? mvprintw(iRow, 79, row_res[8]) : mvprintw(iRow, 79, "-");
+			mvprintw(iRow, 89, row_res[9]);
+			mvprintw(iRow, 97, row_res[10]);
+			mvprintw(iRow, 119, row_res[11]);
+			mvprintw(iRow, 138, row_res[12]);
+
+			if (row_res[5] != NULL)
+			{
+				char aQuery[300];
+				unsigned int iQLen = sizeof(aQuery) - 1;
+				strncpy(aQuery, row_res[5], iQLen);
+				aQuery[iQLen] = '\0';
+
+				/* Replace TABs and LFs. */
+				replaceChar(aQuery, '\t', ' ');
+				replaceChar(aQuery, '\n', ' ');
+
+				attron(COLOR_PAIR(5));
+				mvprintw(iRow += 2, 1, "%s", aQuery);
+				attroff(COLOR_PAIR(5));
+			}
+
+			attrset(A_NORMAL);
+
+			attron(COLOR_PAIR(5));
+			mvprintw(iRow += 1, 1, row_res[13]);
+			attroff(COLOR_PAIR(5));
+		}
+
+		iRow += 3;
+	}
+
+	mysql_free_result(result_q);
+}
+
+
+/**
+	* Metadata lock waits display.
+	*
+	* @param   MYSQL* pConn, connection pointer
+	* @param   int* pRow, pointer to iRow
+	* @param   int* pV8, pointer to iV8
+	* @return  void
+*/
+
+void displayMetadata(MYSQL* pConn, int* pRow, unsigned int* pMDL, unsigned int* pV8)
+{
+	int iRow = *pRow;
+
+	if (*pMDL == 0)
+	{
+		attrset(A_BOLD | COLOR_PAIR(4));
+		mvprintw(iRow += 3, 1, "p_s metadata lock instrumentation disabled");
+		attrset(A_NORMAL);
+		return;
+	}
+
+	if (*pV8 != 1) /* v.5.7 */
+	{
+		mysql_query(pConn, "\
+			SELECT \
+				OBJECT_TYPE, OBJECT_SCHEMA, OBJECT_NAME, LOCK_TYPE, LOCK_DURATION, LOCK_STATUS, OWNER_THREAD_ID  \
+			FROM \
+				performance_schema.metadata_locks \
+			WHERE \
+				OBJECT_SCHEMA <> 'performance_schema' \
+		");
+			/* Join on sys.session is simply too expensive: 50 QPS >> 2500+ QPS */
+
+		MYSQL_RES* result_q = mysql_store_result(pConn);
+		MYSQL_ROW row_res;
+
+		iRow += 3;
+		attrset(A_BOLD | COLOR_PAIR(2));
+		mvprintw(iRow, 1, "metadata locks");
+		attrset(A_NORMAL);
+		iRow = 12;
+
+		while ((row_res = mysql_fetch_row(result_q)))
+		{
+			if (row_res != NULL)
+			{
+				mvprintw(iRow, 1, "db");
+				mvprintw(iRow, 22, "table");
+				mvprintw(iRow, 45, "obj");
+				mvprintw(iRow, 65, "lock type");
+				mvprintw(iRow, 95, "duration");
+				mvprintw(iRow, 115, "status");
+				mvprintw(iRow, 130, "id");
+
+				iRow++;
+				attrset(A_BOLD | COLOR_PAIR(1));
+
+				(row_res[1] != NULL) ? mvprintw(iRow, 1, row_res[1]) : mvprintw(iRow, 1, "-");
+				(row_res[2] != NULL) ? mvprintw(iRow, 22, row_res[2]) : mvprintw(iRow, 22, "-");
+				mvprintw(iRow, 45, row_res[0]);
+				mvprintw(iRow, 65, row_res[3]);
+				mvprintw(iRow, 95, row_res[4]);
+				mvprintw(iRow, 115, row_res[5]);
+				mvprintw(iRow, 130, row_res[6]);
+
+				attrset(A_NORMAL);
+			}
+
+			iRow += 2;
+		}
+
+		mysql_free_result(result_q);
+	}
+	else /* v.8.0+ */
+	{
+		mysql_query(pConn, "\
+			SELECT \
+				OBJECT_TYPE, ML.OBJECT_SCHEMA, ML.OBJECT_NAME, ML.LOCK_TYPE, DL.LOCK_MODE, DL.LOCK_TYPE, ML.LOCK_DURATION, DL.LOCK_STATUS, ML.OWNER_THREAD_ID \
+			FROM \
+				performance_schema.metadata_locks ML \
+			LEFT JOIN \
+				performance_schema.data_locks DL ON DL.THREAD_ID = ML.OWNER_THREAD_ID \
+			WHERE \
+				ML.OBJECT_SCHEMA NOT IN ('information_schema', 'mysql', 'performance_schema') \
+		");
+
+		MYSQL_RES* result_q = mysql_store_result(pConn);
+		MYSQL_ROW row_res;
+
+		iRow += 3;
+		attrset(A_BOLD | COLOR_PAIR(2));
+		mvprintw(iRow, 1, "metadata locks");
+		attrset(A_NORMAL);
+		iRow = 12;
+
+		while ((row_res = mysql_fetch_row(result_q)))
+		{
+			if (row_res != NULL)
+			{
+				mvprintw(iRow, 1, "db");
+				mvprintw(iRow, 22, "table");
+				mvprintw(iRow, 40, "obj");
+				mvprintw(iRow, 53, "type");
+				mvprintw(iRow, 76, "mode");
+				mvprintw(iRow, 98, "type");
+				mvprintw(iRow, 109, "duration");
+				mvprintw(iRow, 124, "status");
+				mvprintw(iRow, 136, "id");
+
+				iRow++;
+				attrset(A_BOLD | COLOR_PAIR(1));
+
+				(row_res[1] != NULL) ? mvprintw(iRow, 1, row_res[1]) : mvprintw(iRow, 1, "-");
+				(row_res[2] != NULL) ? mvprintw(iRow, 22, row_res[2]) : mvprintw(iRow, 22, "-");
+				mvprintw(iRow, 40, row_res[0]);
+				mvprintw(iRow, 53, row_res[3]);
+				(row_res[4] != NULL) ? mvprintw(iRow, 76, row_res[4]) : mvprintw(iRow, 76, "-");
+				(row_res[5] != NULL) ? mvprintw(iRow, 98, row_res[5]) : mvprintw(iRow, 98, "-");
+				mvprintw(iRow, 109, row_res[6]);
+				(row_res[7] != NULL) ? mvprintw(iRow, 124, row_res[7]) : mvprintw(iRow, 124, "-");
+				mvprintw(iRow, 136, row_res[8]);
+
+				attrset(A_NORMAL);
+			}
+
+			iRow += 2;
+		}
+
+		mysql_free_result(result_q);
 	}
 }
 
@@ -686,11 +741,11 @@ void signal_handler(int iSig)
 	* Process command-line switches using getopt()
 	*
 	* @param   integer iArgCount, number of arguments
-	* @param   array aArgV, switches
+	* @param   char* aArgV, pointer to aArgV
 	* @return  unsigned integer
 */
 
-unsigned int options(int iArgCount, char* aArgV[])
+unsigned int options(int iArgCount, char* const aArgV[])
 {
 	int iOpts = 0;
 	int iOptsIdx = 0;
@@ -774,59 +829,7 @@ unsigned int options(int iArgCount, char* aArgV[])
 
 
 /**
-	* Use nanosleep() instead of unreliable usleep().
-	* Credit: Sunny Shukia.
-	*
-	* @param   unsigned integer ms, milliseconds
-	* @return  signed integer
-*/
-
-int msSleep(unsigned int ms)
-{
-	struct timespec rem;
-	struct timespec req =
-	{
-		(int) (ms / 1000),
-		(ms % 1000) * 1000000
-	};
-
-	return nanosleep(&req, &rem);
-}
-
-
-/**
-	* Character replacement to clean multi-line SQL strings.
-	* Credit: Fabio Cabral.
-	*
-	* @param   array aSQL, SQL string
-	* @param   char cOrg, original char
-	* @param   char cRep, replacement char
-	* @return  void
-*/
-
-void replaceChar(char* const aSQL, char const cOrg, char const cRep) {
-
-	char* src;
-	char* dst;
-
-	for (src = dst = aSQL; *src != '\0'; src++)
-	{
-		*dst = *src;
-
-		if (*dst == cOrg)
-		{
-			*dst = cRep;
-		}
-
-		dst++;
-	}
-
-	*dst = '\0';
-}
-
-
-/**
-	* Display menu.
+	* Display program menu.
 	*
 	* @param   char* pFName, filename from aArgV[0]
 	* @return  void
