@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/07/2022
-	* @version       0.24 (from mysqltrxmon)
+	* @version       0.25 (from mysqltrxmon)
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -25,7 +25,7 @@
 
 
 #define APP_NAME "MySQLLockMon"
-#define MB_VERSION "0.24"
+#define MB_VERSION "0.25"
 
 
 void displayTransactions(MYSQL* pConn, int* pRow);
@@ -216,7 +216,7 @@ int main(int iArgCount, char* aArgV[])
 		mysql_free_result(result_acttr);
 
 
-		/* The following is to work around ncurses loop peculiarities. */
+		/* The following works around ncurses loop peculiarities. */
 
 		iKey = getch();
 
@@ -238,16 +238,16 @@ int main(int iArgCount, char* aArgV[])
 		}
 
 
-		if (iAccess == 0)
-		{
-			attrset(A_BOLD | COLOR_PAIR(4));
-			mvprintw(iRow += 2, 1, "no user privilege access");
-			attrset(A_NORMAL);
-		}
-		else if (iPS == 0)
+		if (iPS == 0)
 		{
 			attrset(A_BOLD | COLOR_PAIR(4));
 			mvprintw(iRow += 2, 1, "performance schema disabled");
+			attrset(A_NORMAL);
+		}
+		else if (iAccess == 0)
+		{
+			attrset(A_BOLD | COLOR_PAIR(4));
+			mvprintw(iRow += 2, 1, "no user privilege access");
 			attrset(A_NORMAL);
 		}
 		else
