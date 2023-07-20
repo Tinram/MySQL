@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.33
+	* @version       0.34
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -25,7 +25,7 @@
 
 
 #define APP_NAME "MySQLTrxMon"
-#define MB_VERSION "0.33"
+#define MB_VERSION "0.34"
 
 
 void displayTRXStats(MYSQL* pConn, int* pRow);
@@ -209,11 +209,16 @@ int main(int iArgCount, char* const aArgV[])
 		if (iPS == 0)
 		{
 			attrset(A_BOLD | COLOR_PAIR(4));
-			mvprintw(iRow += 4, 1, "performance schema disabled");
+			mvprintw(iRow += 2, 1, "performance schema disabled");
 			attrset(A_NORMAL);
 		}
-
-		if (iAccess == 1)
+		else if (iAccess == 0)
+		{
+			attrset(A_BOLD | COLOR_PAIR(4));
+			mvprintw(iRow += 2, 1, "no user privilege access");
+			attrset(A_NORMAL);
+		}
+		else
 		{
 			iRow = 8;
 
@@ -245,7 +250,7 @@ int main(int iArgCount, char* const aArgV[])
 				ORDER BY \
 					duration DESC \
 			");
-				/* left join for Aurora 2.10 */
+				/* LEFT JOIN for Aurora 2.10 */
 
 			MYSQL_RES* result_trx = mysql_store_result(pConn);
 			MYSQL_ROW row_trx;
@@ -345,12 +350,6 @@ int main(int iArgCount, char* const aArgV[])
 					iPadPos++;
 				break;
 			}
-		}
-		else
-		{
-			attrset(A_BOLD | COLOR_PAIR(4));
-			mvprintw(iRow += 2, 1, "no user privilege access");
-			attrset(A_NORMAL);
 		}
 
 		refresh();
