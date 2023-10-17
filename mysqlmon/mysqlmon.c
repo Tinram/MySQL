@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.31
+	* @version       0.32
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -27,7 +27,7 @@
 
 
 #define APP_NAME "MySQLMon"
-#define MB_VERSION "0.31"
+#define MB_VERSION "0.32"
 
 
 int main(int iArgCount, char* const aArgV[])
@@ -413,7 +413,7 @@ int main(int iArgCount, char* const aArgV[])
 			mysql_query(pConn, "SELECT ROUND(100 * (SELECT Variable_value FROM performance_schema.global_status WHERE Variable_name = 'Innodb_buffer_pool_pages_data') / (SELECT Variable_value FROM performance_schema.global_status WHERE Variable_name = 'Innodb_buffer_pool_pages_total'), 2)");
 			MYSQL_RES* result_bpf = mysql_store_result(pConn);
 			MYSQL_ROW row_bpf = mysql_fetch_row(result_bpf);
-			printw(" BP pct fill: %s%\n", row_bpf[0]);
+			printw(" BP pct fill: %s%%\n", row_bpf[0]);
 			mysql_free_result(result_bpf);
 		}
 
@@ -422,7 +422,7 @@ int main(int iArgCount, char* const aArgV[])
 			mysql_query(pConn, "SELECT ROUND(100 - (100 * (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_pages_read') / (SELECT Variable_value FROM sys.metrics WHERE Variable_name = 'Innodb_buffer_pool_read_requests')), 2)");
 			MYSQL_RES* result_bphr = mysql_store_result(pConn);
 			MYSQL_ROW row_bphr = mysql_fetch_row(result_bphr);
-			printw(" BP hit rate: %s%\n", row_bphr[0]);
+			printw(" BP hit rate: %s%%\n", row_bphr[0]);
 			mysql_free_result(result_bphr);
 
 			mysql_query(pConn, "SELECT ROUND((Variable_value / 3600), 2) FROM sys.metrics WHERE Variable_name = 'uptime'");
