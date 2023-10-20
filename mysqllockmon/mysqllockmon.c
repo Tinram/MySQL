@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/07/2022
-	* @version       0.25 (from mysqltrxmon)
+	* @version       0.26 (from mysqltrxmon)
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -25,7 +25,7 @@
 
 
 #define APP_NAME "MySQLLockMon"
-#define MB_VERSION "0.25"
+#define MB_VERSION "0.26"
 
 
 void displayTransactions(MYSQL* pConn, int* pRow);
@@ -158,17 +158,17 @@ int main(int iArgCount, char* aArgV[])
 		attron(A_BOLD);
 		if (iAurora == 0)
 		{
-			mvprintw(iRow, 1, aHostname);
+			mvprintw(iRow, 1, "%s", aHostname);
 		}
 		else
 		{
-			mvprintw(iRow, 1, aAuroraServerId);
+			mvprintw(iRow, 1, "%s", aAuroraServerId);
 		}
 		attroff(A_BOLD);
 
 		if (iAurora == 0)
 		{
-			mvprintw(iRow += 1, 1, aVersion);
+			mvprintw(iRow += 1, 1, "%s", aVersion);
 		}
 		else
 		{
@@ -340,29 +340,29 @@ void displayTransactions(MYSQL* pConn, int* pRow)
 			attrset(A_BOLD | COLOR_PAIR(1));
 			iRow++;
 
-			mvprintw(iRow, 1, row_res[0]);
-			mvprintw(iRow, 8, row_res[1]);
-			mvprintw(iRow, 18, row_res[2]);
-			mvprintw(iRow, 28, row_res[3]);
-			mvprintw(iRow, 38, row_res[4]);
-			mvprintw(iRow, 48, row_res[5]);
-			mvprintw(iRow, 58, row_res[6]);
-			mvprintw(iRow, 68, row_res[7]);
+			mvprintw(iRow, 1, "%s", row_res[0]);
+			mvprintw(iRow, 8, "%s", row_res[1]);
+			mvprintw(iRow, 18, "%s", row_res[2]);
+			mvprintw(iRow, 28, "%s", row_res[3]);
+			mvprintw(iRow, 38, "%s", row_res[4]);
+			mvprintw(iRow, 48, "%s", row_res[5]);
+			mvprintw(iRow, 58, "%s", row_res[6]);
+			mvprintw(iRow, 68, "%s", row_res[7]);
 			mvprintw(iRow, 78, "%c", idx);
-			mvprintw(iRow, 88, row_res[9]);
-			mvprintw(iRow, 100, row_res[10]);
-			mvprintw(iRow, 124, row_res[11]);
-			mvprintw(iRow, 135, row_res[12]);
+			mvprintw(iRow, 88, "%s", row_res[9]);
+			mvprintw(iRow, 100, "%s", row_res[10]);
+			mvprintw(iRow, 124, "%s", row_res[11]);
+			mvprintw(iRow, 135, "%s", row_res[12]);
 
 			attrset(A_NORMAL);
 			attron(COLOR_PAIR(5));
-			mvprintw(iRow += 2, 1, row_res[13]);
+			mvprintw(iRow += 2, 1, "%s", row_res[13]);
 			attroff(COLOR_PAIR(5));
 
 			if (row_res[14] != NULL)
 			{
 				attrset(A_BOLD | COLOR_PAIR(3));
-				mvprintw(iRow += 1, 1, row_res[14]);
+				mvprintw(iRow += 1, 1, "%s", row_res[14]);
 				attrset(A_NORMAL);
 			}
 
@@ -425,7 +425,7 @@ void displayInnoDB(MYSQL* pConn, int* pRow)
 			mvprintw(iRow, 1, "locked table");
 			iRow++;
 			attrset(A_BOLD | COLOR_PAIR(1));
-			mvprintw(iRow, 1, row_res[1]);
+			mvprintw(iRow, 1, "%s", row_res[1]);
 			attrset(A_NORMAL);
 
 			iRow += 2;
@@ -444,17 +444,17 @@ void displayInnoDB(MYSQL* pConn, int* pRow)
 			iRow++;
 			attrset(A_BOLD | COLOR_PAIR(1));
 
-			mvprintw(iRow, 1, row_res[0]);
-			mvprintw(iRow, 10, row_res[2]);
-			mvprintw(iRow, 24, row_res[3]);
-			mvprintw(iRow, 37, row_res[4]);
-			mvprintw(iRow, 47, row_res[5]);
-			mvprintw(iRow, 57, row_res[7]);
-			mvprintw(iRow, 75, row_res[8]);
-			mvprintw(iRow, 85, row_res[10]);
-			mvprintw(iRow, 104, row_res[12]);
-			mvprintw(iRow, 113, row_res[13]);
-			mvprintw(iRow, 126, row_res[11]);
+			mvprintw(iRow, 1, "%s", row_res[0]);
+			mvprintw(iRow, 10, "%s", row_res[2]);
+			mvprintw(iRow, 24, "%s", row_res[3]);
+			mvprintw(iRow, 37, "%s", row_res[4]);
+			mvprintw(iRow, 47, "%s", row_res[5]);
+			mvprintw(iRow, 57, "%s", row_res[7]);
+			mvprintw(iRow, 75, "%s", row_res[8]);
+			mvprintw(iRow, 85, "%s", row_res[10]);
+			mvprintw(iRow, 104, "%s", row_res[12]);
+			mvprintw(iRow, 113, "%s", row_res[13]);
+			mvprintw(iRow, 126, "%s", row_res[11]);
 
 			if (row_res[6] != NULL)
 			{
@@ -488,7 +488,7 @@ void displayInnoDB(MYSQL* pConn, int* pRow)
 
 			attrset(A_NORMAL);
 			attron(COLOR_PAIR(5));
-			mvprintw(iRow += 1, 1, row_res[14]);
+			mvprintw(iRow += 1, 1, "%s", row_res[14]);
 			attroff(COLOR_PAIR(5));
 		}
 
@@ -544,8 +544,8 @@ void displayTableLockWaits(MYSQL* pConn, int* pRow, unsigned int* pMDL)
 			mvprintw(iRow, 22, "table");
 			iRow++;
 			attrset(A_BOLD | COLOR_PAIR(1));
-			mvprintw(iRow, 1, row_res[0]);
-			mvprintw(iRow, 22, row_res[1]);
+			mvprintw(iRow, 1, "%s", row_res[0]);
+			mvprintw(iRow, 22, "%s", row_res[1]);
 			attrset(A_NORMAL);
 
 			iRow += 2;
@@ -563,16 +563,16 @@ void displayTableLockWaits(MYSQL* pConn, int* pRow, unsigned int* pMDL)
 			iRow++;
 			attrset(A_BOLD | COLOR_PAIR(1));
 
-			mvprintw(iRow, 1, row_res[2]);
-			mvprintw(iRow, 22, row_res[3]);
-			mvprintw(iRow, 46, row_res[4]);
-			mvprintw(iRow, 62, row_res[6]);
-			(row_res[7] != NULL) ? mvprintw(iRow, 70, row_res[7]) : mvprintw(iRow, 70, "-");
-			(row_res[8] != NULL) ? mvprintw(iRow, 79, row_res[8]) : mvprintw(iRow, 79, "-");
-			mvprintw(iRow, 89, row_res[9]);
-			mvprintw(iRow, 97, row_res[10]);
-			mvprintw(iRow, 119, row_res[11]);
-			mvprintw(iRow, 138, row_res[12]);
+			mvprintw(iRow, 1, "%s", row_res[2]);
+			mvprintw(iRow, 22, "%s", row_res[3]);
+			mvprintw(iRow, 46, "%s", row_res[4]);
+			mvprintw(iRow, 62, "%s", row_res[6]);
+			(row_res[7] != NULL) ? mvprintw(iRow, 70, "%s", row_res[7]) : mvprintw(iRow, 70, "-");
+			(row_res[8] != NULL) ? mvprintw(iRow, 79, "%s", row_res[8]) : mvprintw(iRow, 79, "-");
+			mvprintw(iRow, 89, "%s", row_res[9]);
+			mvprintw(iRow, 97, "%s", row_res[10]);
+			mvprintw(iRow, 119, "%s", row_res[11]);
+			mvprintw(iRow, 138, "%s", row_res[12]);
 
 			if (row_res[5] != NULL)
 			{
@@ -593,7 +593,7 @@ void displayTableLockWaits(MYSQL* pConn, int* pRow, unsigned int* pMDL)
 			attrset(A_NORMAL);
 
 			attron(COLOR_PAIR(5));
-			mvprintw(iRow += 1, 1, row_res[13]);
+			mvprintw(iRow += 1, 1, "%s", row_res[13]);
 			attroff(COLOR_PAIR(5));
 		}
 
@@ -661,13 +661,13 @@ void displayMetadata(MYSQL* pConn, int* pRow, unsigned int* pMDL, unsigned int* 
 				iRow++;
 				attrset(A_BOLD | COLOR_PAIR(1));
 
-				(row_res[1] != NULL) ? mvprintw(iRow, 1, row_res[1]) : mvprintw(iRow, 1, "-");
-				(row_res[2] != NULL) ? mvprintw(iRow, 22, row_res[2]) : mvprintw(iRow, 22, "-");
-				mvprintw(iRow, 45, row_res[0]);
-				mvprintw(iRow, 65, row_res[3]);
-				mvprintw(iRow, 95, row_res[4]);
-				mvprintw(iRow, 115, row_res[5]);
-				mvprintw(iRow, 130, row_res[6]);
+				(row_res[1] != NULL) ? mvprintw(iRow, 1, "%s", row_res[1]) : mvprintw(iRow, 1, "-");
+				(row_res[2] != NULL) ? mvprintw(iRow, 22, "%s", row_res[2]) : mvprintw(iRow, 22, "-");
+				mvprintw(iRow, 45, "%s", row_res[0]);
+				mvprintw(iRow, 65, "%s", row_res[3]);
+				mvprintw(iRow, 95, "%s", row_res[4]);
+				mvprintw(iRow, 115, "%s", row_res[5]);
+				mvprintw(iRow, 130, "%s", row_res[6]);
 
 				attrset(A_NORMAL);
 			}
@@ -716,15 +716,15 @@ void displayMetadata(MYSQL* pConn, int* pRow, unsigned int* pMDL, unsigned int* 
 				iRow++;
 				attrset(A_BOLD | COLOR_PAIR(1));
 
-				(row_res[1] != NULL) ? mvprintw(iRow, 1, row_res[1]) : mvprintw(iRow, 1, "-");
-				(row_res[2] != NULL) ? mvprintw(iRow, 22, row_res[2]) : mvprintw(iRow, 22, "-");
-				mvprintw(iRow, 40, row_res[0]);
-				mvprintw(iRow, 53, row_res[3]);
-				(row_res[4] != NULL) ? mvprintw(iRow, 76, row_res[4]) : mvprintw(iRow, 76, "-");
-				(row_res[5] != NULL) ? mvprintw(iRow, 98, row_res[5]) : mvprintw(iRow, 98, "-");
-				mvprintw(iRow, 109, row_res[6]);
-				(row_res[7] != NULL) ? mvprintw(iRow, 124, row_res[7]) : mvprintw(iRow, 124, "-");
-				mvprintw(iRow, 136, row_res[8]);
+				(row_res[1] != NULL) ? mvprintw(iRow, 1, "%s", row_res[1]) : mvprintw(iRow, 1, "-");
+				(row_res[2] != NULL) ? mvprintw(iRow, 22, "%s", row_res[2]) : mvprintw(iRow, 22, "-");
+				mvprintw(iRow, 40, "%s", row_res[0]);
+				mvprintw(iRow, 53, "%s", row_res[3]);
+				(row_res[4] != NULL) ? mvprintw(iRow, 76, "%s", row_res[4]) : mvprintw(iRow, 76, "-");
+				(row_res[5] != NULL) ? mvprintw(iRow, 98, "%s", row_res[5]) : mvprintw(iRow, 98, "-");
+				mvprintw(iRow, 109, "%s", row_res[6]);
+				(row_res[7] != NULL) ? mvprintw(iRow, 124, "%s", row_res[7]) : mvprintw(iRow, 124, "-");
+				mvprintw(iRow, 136, "%s", row_res[8]);
 
 				attrset(A_NORMAL);
 			}
