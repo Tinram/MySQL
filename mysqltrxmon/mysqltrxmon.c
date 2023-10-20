@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 03/05/2022
-	* @version       0.34
+	* @version       0.35
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -25,7 +25,7 @@
 
 
 #define APP_NAME "MySQLTrxMon"
-#define MB_VERSION "0.34"
+#define MB_VERSION "0.35"
 
 
 void displayTRXStats(MYSQL* pConn, int* pRow);
@@ -167,11 +167,11 @@ int main(int iArgCount, char* const aArgV[])
 		attron(A_BOLD);
 		if (iAurora == 0)
 		{
-			mvprintw(iRow, 1, aHostname);
+			mvprintw(iRow, 1, "%s", aHostname);
 		}
 		else
 		{
-			mvprintw(iRow, 1, aAuroraServerId);
+			mvprintw(iRow, 1, "%s", aAuroraServerId);
 		}
 		attroff(A_BOLD);
 
@@ -179,7 +179,7 @@ int main(int iArgCount, char* const aArgV[])
 		{
 			if (iAurora == 0)
 			{
-				mvprintw(iRow += 1, 1, aVersion);
+				mvprintw(iRow += 1, 1, "%s", aVersion);
 			}
 			else
 			{
@@ -265,19 +265,19 @@ int main(int iArgCount, char* const aArgV[])
 					iRow++;
 
 					wattrset(pPad, A_BOLD | COLOR_PAIR(1));
-					mvwprintw(pPad, iRow, 1, row_trx[1]);
-					mvwprintw(pPad, iRow, 10, row_trx[2]);
-					mvwprintw(pPad, iRow, 20, row_trx[3]);
-					mvwprintw(pPad, iRow, 33, row_trx[4]);
-					mvwprintw(pPad, iRow, 46, row_trx[5]);
-					mvwprintw(pPad, iRow, 57, row_trx[6]);
-					mvwprintw(pPad, iRow, 68, row_trx[7]);
-					mvwprintw(pPad, iRow, 77, row_trx[8]);
+					mvwprintw(pPad, iRow, 1, "%s", row_trx[1]);
+					mvwprintw(pPad, iRow, 10, "%s", row_trx[2]);
+					mvwprintw(pPad, iRow, 20, "%s", row_trx[3]);
+					mvwprintw(pPad, iRow, 33, "%s", row_trx[4]);
+					mvwprintw(pPad, iRow, 46, "%s", row_trx[5]);
+					mvwprintw(pPad, iRow, 57, "%s", row_trx[6]);
+					mvwprintw(pPad, iRow, 68, "%s", row_trx[7]);
+					mvwprintw(pPad, iRow, 77, "%s", row_trx[8]);
 					mvwprintw(pPad, iRow, 85, "%c", idx);
-					mvwprintw(pPad, iRow, 93, row_trx[10]);
-					mvwprintw(pPad, iRow, 107, row_trx[11]);
-					mvwprintw(pPad, iRow, 130, row_trx[12]);
-					mvwprintw(pPad, iRow, 140, row_trx[13]);
+					mvwprintw(pPad, iRow, 93, "%s", row_trx[10]);
+					mvwprintw(pPad, iRow, 107, "%s", row_trx[11]);
+					mvwprintw(pPad, iRow, 130, "%s", row_trx[12]);
+					mvwprintw(pPad, iRow, 140, "%s", row_trx[13]);
 					wattrset(pPad, A_NORMAL);
 
 					iRow++;
@@ -285,18 +285,18 @@ int main(int iArgCount, char* const aArgV[])
 					if (row_trx[17] != NULL)
 					{
 						wattron(pPad, COLOR_PAIR(1));
-						mvwprintw(pPad, iRow += 1, 1, row_trx[17]);
+						mvwprintw(pPad, iRow += 1, 1, "%s", row_trx[17]);
 						wattroff(pPad, COLOR_PAIR(1));
 					}
 
 					wattron(pPad, COLOR_PAIR(5));
-					mvwprintw(pPad, iRow += 1, 1, row_trx[14]);
+					mvwprintw(pPad, iRow += 1, 1, "%s", row_trx[14]);
 					wattroff(pPad, COLOR_PAIR(5));
 
 					if (row_trx[15] != NULL)
 					{
 						wattrset(pPad, A_BOLD | COLOR_PAIR(3));
-						mvwprintw(pPad, iRow += 1, 1, row_trx[15]);
+						mvwprintw(pPad, iRow += 1, 1, "%s", row_trx[15]);
 						wattrset(pPad, A_NORMAL);
 					}
 
