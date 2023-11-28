@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/07/2022
-	* @version       0.26 (from mysqltrxmon)
+	* @version       0.27 (from mysqltrxmon)
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -25,7 +25,7 @@
 
 
 #define APP_NAME "MySQLLockMon"
-#define MB_VERSION "0.26"
+#define MB_VERSION "0.27"
 
 
 void displayTransactions(MYSQL* pConn, int* pRow);
@@ -633,7 +633,7 @@ void displayMetadata(MYSQL* pConn, int* pRow, unsigned int* pMDL, unsigned int* 
 			FROM \
 				performance_schema.metadata_locks \
 			WHERE \
-				OBJECT_SCHEMA <> 'performance_schema' \
+				OBJECT_SCHEMA NOT IN ('information_schema', 'mysql', 'performance_schema') \
 		");
 			/* Join on sys.session is simply too expensive: 50 QPS >> 2500+ QPS */
 
@@ -651,22 +651,22 @@ void displayMetadata(MYSQL* pConn, int* pRow, unsigned int* pMDL, unsigned int* 
 			if (row_res != NULL)
 			{
 				mvprintw(iRow, 1, "db");
-				mvprintw(iRow, 22, "table");
-				mvprintw(iRow, 45, "obj");
-				mvprintw(iRow, 65, "lock type");
-				mvprintw(iRow, 95, "duration");
-				mvprintw(iRow, 115, "status");
+				mvprintw(iRow, 25, "table");
+				mvprintw(iRow, 53, "obj");
+				mvprintw(iRow, 74, "lock type");
+				mvprintw(iRow, 97, "duration");
+				mvprintw(iRow, 117, "status");
 				mvprintw(iRow, 130, "id");
 
 				iRow++;
 				attrset(A_BOLD | COLOR_PAIR(1));
 
 				(row_res[1] != NULL) ? mvprintw(iRow, 1, "%s", row_res[1]) : mvprintw(iRow, 1, "-");
-				(row_res[2] != NULL) ? mvprintw(iRow, 22, "%s", row_res[2]) : mvprintw(iRow, 22, "-");
-				mvprintw(iRow, 45, "%s", row_res[0]);
-				mvprintw(iRow, 65, "%s", row_res[3]);
-				mvprintw(iRow, 95, "%s", row_res[4]);
-				mvprintw(iRow, 115, "%s", row_res[5]);
+				(row_res[2] != NULL) ? mvprintw(iRow, 25, "%s", row_res[2]) : mvprintw(iRow, 25, "-");
+				mvprintw(iRow, 53, "%s", row_res[0]);
+				mvprintw(iRow, 74, "%s", row_res[3]);
+				mvprintw(iRow, 97, "%s", row_res[4]);
+				mvprintw(iRow, 117, "%s", row_res[5]);
 				mvprintw(iRow, 130, "%s", row_res[6]);
 
 				attrset(A_NORMAL);
@@ -704,27 +704,27 @@ void displayMetadata(MYSQL* pConn, int* pRow, unsigned int* pMDL, unsigned int* 
 			if (row_res != NULL)
 			{
 				mvprintw(iRow, 1, "db");
-				mvprintw(iRow, 22, "table");
-				mvprintw(iRow, 40, "obj");
-				mvprintw(iRow, 53, "type");
-				mvprintw(iRow, 76, "mode");
-				mvprintw(iRow, 98, "type");
-				mvprintw(iRow, 109, "duration");
-				mvprintw(iRow, 124, "status");
-				mvprintw(iRow, 136, "id");
+				mvprintw(iRow, 25, "table");
+				mvprintw(iRow, 53, "obj");
+				mvprintw(iRow, 74, "type");
+				mvprintw(iRow, 97, "mode");
+				mvprintw(iRow, 117, "type");
+				mvprintw(iRow, 127, "duration");
+				mvprintw(iRow, 141, "status");
+				mvprintw(iRow, 153, "id");
 
 				iRow++;
 				attrset(A_BOLD | COLOR_PAIR(1));
 
 				(row_res[1] != NULL) ? mvprintw(iRow, 1, "%s", row_res[1]) : mvprintw(iRow, 1, "-");
-				(row_res[2] != NULL) ? mvprintw(iRow, 22, "%s", row_res[2]) : mvprintw(iRow, 22, "-");
-				mvprintw(iRow, 40, "%s", row_res[0]);
-				mvprintw(iRow, 53, "%s", row_res[3]);
-				(row_res[4] != NULL) ? mvprintw(iRow, 76, "%s", row_res[4]) : mvprintw(iRow, 76, "-");
-				(row_res[5] != NULL) ? mvprintw(iRow, 98, "%s", row_res[5]) : mvprintw(iRow, 98, "-");
-				mvprintw(iRow, 109, "%s", row_res[6]);
-				(row_res[7] != NULL) ? mvprintw(iRow, 124, "%s", row_res[7]) : mvprintw(iRow, 124, "-");
-				mvprintw(iRow, 136, "%s", row_res[8]);
+				(row_res[2] != NULL) ? mvprintw(iRow, 25, "%s", row_res[2]) : mvprintw(iRow, 25, "-");
+				mvprintw(iRow, 53, "%s", row_res[0]);
+				mvprintw(iRow, 74, "%s", row_res[3]);
+				(row_res[4] != NULL) ? mvprintw(iRow, 97, "%s", row_res[4]) : mvprintw(iRow, 97, "-");
+				(row_res[5] != NULL) ? mvprintw(iRow, 117, "%s", row_res[5]) : mvprintw(iRow, 117, "-");
+				mvprintw(iRow, 127, "%s", row_res[6]);
+				(row_res[7] != NULL) ? mvprintw(iRow, 141, "%s", row_res[7]) : mvprintw(iRow, 141, "-");
+				mvprintw(iRow, 153, "%s", row_res[8]);
 
 				attrset(A_NORMAL);
 			}
