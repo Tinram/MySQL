@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.32
+	* @version       0.33
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -27,7 +27,7 @@
 
 
 #define APP_NAME "MySQLMon"
-#define MB_VERSION "0.32"
+#define MB_VERSION "0.33"
 
 
 int main(int iArgCount, char* const aArgV[])
@@ -52,6 +52,7 @@ int main(int iArgCount, char* const aArgV[])
 	unsigned int iV8 = 0;
 	unsigned int iMaria = 0;
 	unsigned int iAurora = 0;
+	unsigned int iReadOnly = 0;
 	unsigned int iOldQueries = 0;
 	unsigned int iQueries = 0;
 
@@ -106,7 +107,14 @@ int main(int iArgCount, char* const aArgV[])
 	/* Identify Aurora version, if applicable. */
 	identifyAuroraVersion(pConn, aAuroraVersion, aAuroraServerId, &iAurora, sizeof(aAuroraVersion) - 1, sizeof(aAuroraServerId) - 1);
 
-	mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* Total queries, not conn questions. */
+	/* Identify Aurora reader/writer without requiring mysql.* db privileges. */
+	mysql_query(pConn, "SELECT @@innodb_read_only");
+	MYSQL_RES* result_read_only = mysql_store_result(pConn);
+	MYSQL_ROW row_read_only = mysql_fetch_row(result_read_only);
+	iReadOnly = (unsigned int) atoi(row_read_only[0]);
+	mysql_free_result(result_read_only);
+
+	mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* Total queries, not connection questions. */
 	MYSQL_RES* result_queries = mysql_store_result(pConn);
 	MYSQL_ROW row_queries = mysql_fetch_row(result_queries);
 	iOldQueries = (unsigned int) atoi(row_queries[1]);
@@ -141,7 +149,7 @@ int main(int iArgCount, char* const aArgV[])
 			}
 			else
 			{
-				printw(" %s (au: %s)\n", aVersion, aAuroraVersion);
+				printw(" %s (au: %s %s)\n", aVersion, aAuroraVersion, (iReadOnly == 0 ? "RW" : "R"));
 			}
 		}
 		else
