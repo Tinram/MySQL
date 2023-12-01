@@ -34,7 +34,7 @@ void signalHandler(int iSig)
 	*
 	* @param   MYSQL* pConn, connection pointer
 	* @param   char* aHN, pointer to aHostname
-	* @param   unsigned int* iHLen, size of aHostname
+	* @param   unsigned int iHLen, size of aHostname
 	* @return  void
 */
 
