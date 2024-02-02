@@ -7,7 +7,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/11/2020
-	* @version       0.33
+	* @version       0.34
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -27,7 +27,7 @@
 
 
 #define APP_NAME "MySQLMon"
-#define MB_VERSION "0.33"
+#define MB_VERSION "0.34"
 
 
 int main(int iArgCount, char* const aArgV[])
@@ -46,6 +46,7 @@ int main(int iArgCount, char* const aArgV[])
 	char aVersion[7];
 	char aAuroraVersion[9];
 	char aAuroraServerId[50];
+	int iDiff = 0;
 	unsigned int iMenu = options(iArgCount, aArgV);
 	unsigned int iPSAccess = 0;
 	unsigned int iISAccess = 0;
@@ -53,6 +54,22 @@ int main(int iArgCount, char* const aArgV[])
 	unsigned int iMaria = 0;
 	unsigned int iAurora = 0;
 	unsigned int iReadOnly = 0;
+	unsigned int iOldTmpTables = 0;
+	unsigned int iTmpTables = 0;
+	unsigned int iOldTmpDiskTables = 0;
+	unsigned int iTmpDiskTables = 0;
+	unsigned int iOldSMPasses = 0;
+	unsigned int iSMPasses = 0;
+	unsigned int iDeadlocks = 0;
+	unsigned int iOldDeadlocks = 0;
+	unsigned int iOldReads = 0;
+	unsigned int iReads = 0;
+	unsigned int iOldInserts = 0;
+	unsigned int iInserts = 0;
+	unsigned int iOldUpdates = 0;
+	unsigned int iUpdates = 0;
+	unsigned int iOldDeletes = 0;
+	unsigned int iDeletes = 0;
 	unsigned int iOldQueries = 0;
 	unsigned int iQueries = 0;
 
@@ -114,6 +131,7 @@ int main(int iArgCount, char* const aArgV[])
 	iReadOnly = (unsigned int) atoi(row_read_only[0]);
 	mysql_free_result(result_read_only);
 
+	/* QPS counter initial value: reset from total (adding others would create significant code bloat). */
 	mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* Total queries, not connection questions. */
 	MYSQL_RES* result_queries = mysql_store_result(pConn);
 	MYSQL_ROW row_queries = mysql_fetch_row(result_queries);
@@ -227,19 +245,31 @@ int main(int iArgCount, char* const aArgV[])
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Created_tmp_tables'");
 		MYSQL_RES* result_ctt = mysql_store_result(pConn);
 		MYSQL_ROW row_ctt = mysql_fetch_row(result_ctt);
-		printw(" tmp tables: %s\n", row_ctt[1]);
+		iTmpTables = (unsigned int) atoi(row_ctt[1]);
+		iDiff = iTmpTables - iOldTmpTables;
+		if (iDiff < 0) {iDiff = 0;}
+		iOldTmpTables = iTmpTables;
+		printw(" tmp tables: %i\n", iDiff);
 		mysql_free_result(result_ctt);
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Created_tmp_disk_tables'");
 		MYSQL_RES* result_ctdt = mysql_store_result(pConn);
 		MYSQL_ROW row_ctdt = mysql_fetch_row(result_ctdt);
-		printw(" tmp disk tables: %s\n", row_ctdt[1]);
+		iTmpDiskTables = (unsigned int) atoi(row_ctdt[1]);
+		iDiff = iTmpDiskTables - iOldTmpDiskTables;
+		if (iDiff < 0) {iDiff = 0;}
+		iOldTmpDiskTables = iTmpDiskTables;
+		printw(" tmp disk tables: %i\n", iDiff);
 		mysql_free_result(result_ctdt);
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Sort_merge_passes'");
 		MYSQL_RES* result_smp = mysql_store_result(pConn);
 		MYSQL_ROW row_smp = mysql_fetch_row(result_smp);
-		printw(" sort merge passes: %s\n\n", row_smp[1]);
+		iSMPasses = (unsigned int) atoi(row_smp[1]);
+		iDiff = iSMPasses - iOldSMPasses;
+		if (iDiff < 0) {iDiff = 0;}
+		iOldSMPasses = iSMPasses;
+		printw(" sort merge passes: %i\n\n", iDiff);
 		mysql_free_result(result_smp);
 
 		/* P_S test and TRX at MySQL layer. */
@@ -370,32 +400,52 @@ int main(int iArgCount, char* const aArgV[])
 			mysql_query(pConn, "SELECT COUNT FROM information_schema.INNODB_METRICS WHERE NAME = 'lock_deadlocks'");
 			MYSQL_RES* result_dl = mysql_store_result(pConn);
 			MYSQL_ROW row_dl = mysql_fetch_row(result_dl);
-			printw(" deadlocks: %s\n", row_dl[0]);
+			iDeadlocks = (unsigned int) atoi(row_dl[0]);
+			iDiff = iDeadlocks - iOldDeadlocks;
+			if (iDiff < 0) {iDiff = 0;}
+			iOldDeadlocks = iDeadlocks;
+			printw(" deadlocks: %i\n", iDiff);
 			mysql_free_result(result_dl);
 		}
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_rows_read'");
 		MYSQL_RES* result_irr = mysql_store_result(pConn);
 		MYSQL_ROW row_irr = mysql_fetch_row(result_irr);
-		printw("\n rows read: %s\n", row_irr[1]);
+		iReads = (unsigned int) atoi(row_irr[1]);
+		iDiff = iReads - iOldReads;
+		if (iDiff < 0) {iDiff = 0;}
+		iOldReads = iReads;
+		printw("\n reads: %i\n", iDiff);
 		mysql_free_result(result_irr);
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_rows_inserted'");
 		MYSQL_RES* result_iri = mysql_store_result(pConn);
 		MYSQL_ROW row_iri = mysql_fetch_row(result_iri);
-		printw(" rows inserted: %s\n", row_iri[1]);
+		iInserts = (unsigned int) atoi(row_iri[1]);
+		iDiff = iInserts - iOldInserts;
+		if (iDiff < 0) {iDiff = 0;}
+		iOldInserts = iInserts;
+		printw(" inserts: %i\n", iDiff);
 		mysql_free_result(result_iri);
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_rows_updated'");
 		MYSQL_RES* result_iru = mysql_store_result(pConn);
 		MYSQL_ROW row_iru = mysql_fetch_row(result_iru);
-		printw(" rows updated: %s\n", row_iru[1]);
+		iUpdates = (unsigned int) atoi(row_iru[1]);
+		iDiff = iUpdates - iOldUpdates;
+		if (iDiff < 0) {iDiff = 0;}
+		iOldUpdates = iUpdates;
+		printw(" updates: %i\n", iDiff);
 		mysql_free_result(result_iru);
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Innodb_rows_deleted'");
 		MYSQL_RES* result_ird = mysql_store_result(pConn);
 		MYSQL_ROW row_ird = mysql_fetch_row(result_ird);
-		printw(" rows deleted: %s\n\n", row_ird[1]);
+		iDeletes = (unsigned int) atoi(row_ird[1]);
+		iDiff = iDeletes - iOldDeletes;
+		if (iDiff < 0) {iDiff = 0;}
+		iOldDeletes = iDeletes;
+		printw(" deletes: %i\n\n", iDiff);
 		mysql_free_result(result_ird);
 
 		mysql_query(pConn, "SHOW GLOBAL STATUS WHERE Variable_name = 'Queries'"); /* Total queries, not conn questions. */
@@ -403,10 +453,11 @@ int main(int iArgCount, char* const aArgV[])
 		MYSQL_ROW row_queries2 = mysql_fetch_row(result_queries2);
 		iQueries = (unsigned int) atoi(row_queries2[1]);
 		/* In tests, close to Innotop's QPS. */
-		unsigned int iDiff = iQueries - iOldQueries;
+		iDiff = iQueries - iOldQueries;
+		if (iDiff < 0) {iDiff = 0;}
 		iOldQueries = iQueries;
 		attrset(A_BOLD | COLOR_PAIR(1));
-		printw(" QPS: %u\n\n", iDiff);
+		printw(" QPS: %i\n\n", iDiff);
 		attrset(A_NORMAL);
 		mysql_free_result(result_queries2);
 
