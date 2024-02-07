@@ -47,7 +47,7 @@ final class SchemaCleaner
         *
         * @author          Martin Latter
         * @copyright       Martin Latter 23/09/2021
-        * @version         0.03, from schema_splitter.php
+        * @version         0.04, from schema_splitter.php
         * @license         GNU GPL v3.0
         * @link            https://github.com/Tinram/MySQL.git
     */
@@ -80,7 +80,7 @@ final class SchemaCleaner
     /** @var array<string> $aMessages, messages holder for output */
     private $aMessages = [];
 
-    /** @var integer $iNumOfSchemaTables, number of schema tables to compare with number of files saved */
+    /** @var integer $iNumOfSchemaTables, number of schema tables */
     private $iNumOfSchemaTables = 0;
 
 
@@ -141,31 +141,22 @@ final class SchemaCleaner
             die(' No specified end markers found in schema file!' . DUB_EOL);
         }
 
-        # check that number of CREATE and DROP statements match in that type of mysql dump schema
+        # find number of instances of 'CREATE TABLE'
+        preg_match_all('/CREATE TABLE/', $sFile, $aCreateMatch);
+        $this->iNumOfSchemaTables = count($aCreateMatch[0]);
+
+        # check that number of CREATE and DROP statements match in dump file
         if ($this->bMatchCreateDropStatements)
         {
             # find number of instances of 'DROP TABLE'
             $sDropPrefix = '/' . $this->sStartTableMarker . '/';
             preg_match_all($sDropPrefix, $sFile, $aDropMatch);
 
-            # find number of instances of 'CREATE TABLE'
-            preg_match_all('/CREATE TABLE/', $sFile, $aCreateMatch);
-
-            # check count
-            if (count($aDropMatch[0]) !== count($aCreateMatch[0]))
+            # compare count
+            if (count($aDropMatch[0]) !== $this->iNumOfSchemaTables)
             {
                 die(PHP_EOL . ' Number of DROP TABLE statements does not match number of CREATE TABLE statements in schema file.' . DUB_EOL);
             }
-            else
-            {
-                $this->iNumOfSchemaTables = count($aCreateMatch[0]);
-            }
-        }
-        else
-        {
-            # find number of instances of 'CREATE TABLE'
-            preg_match_all('/CREATE TABLE/', $sFile, $aCreateMatch);
-            $this->iNumOfSchemaTables = count($aCreateMatch[0]);
         }
 
         # create array of table info
@@ -190,8 +181,6 @@ final class SchemaCleaner
                 $iStart = strpos($sFile, $this->sStartTableMarker, $iEnd);
                 $iEnd = strpos($sFile, $this->sEndTableMarker, $iStart);
             }
-
-            # N.B. strpos() is much faster than stripos() (1.5s vs 245s on 2MB schema file)
 
             $sTable = PHP_EOL;
 
