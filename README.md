@@ -168,10 +168,14 @@ Connect as root user.
 
 ### Purpose
 
-PHP CLI script to reduce and clarify a schema definition file from *mysqldump* (`-d` / `--no-data`) i.e. removing *mysqldump* comments and directives. (The output file is not suitable for import into MySQL.)
+Python and PHP scripts to minimise and clarify database schema files exported by *mysqldump* (`-d` / `--no-data`) for text editor viewing i.e. by removing comments and directives. (As a result, the output file will not import into MySQL.)
 
 
 ### Usage
+
+```bash
+    python3 schema_tools/schema_cleaner.py -f <filename.sql>
+```
 
 ```bash
     php schema_tools/schema_cleaner.php <filename.sql>
