@@ -5,7 +5,7 @@
 	*
 	* @author        Martin Latter
 	* @copyright     Martin Latter, 06/07/2022
-	* @version       0.27 (from mysqltrxmon)
+	* @version       0.28 (from mysqltrxmon)
 	* @license       GNU GPL version 3.0 (GPL v3); https://www.gnu.org/licenses/gpl-3.0.html
 	* @link          https://github.com/Tinram/MySQL.git
 	*
@@ -25,7 +25,7 @@
 
 
 #define APP_NAME "MySQLLockMon"
-#define MB_VERSION "0.27"
+#define MB_VERSION "0.28"
 
 
 void displayTransactions(MYSQL* pConn, int* pRow);
@@ -37,7 +37,7 @@ void displayMetadata(MYSQL* pConn, int* pRow, unsigned int* pMDL, unsigned int* 
 unsigned int iTime = 250; // millisecs
 
 
-int main(int iArgCount, char* aArgV[])
+int main(int iArgCount, char* const aArgV[])
 {
 	pProgname = aArgV[0];
 
@@ -56,6 +56,7 @@ int main(int iArgCount, char* aArgV[])
 	} LockType;
 
 	MYSQL* pConn;
+	LockType displayChoice_t = TRANSACTIONS;
 	char* const pMaria = "MariaDB";
 	char aHostname[50];
 	char aVersion[7];
@@ -70,7 +71,6 @@ int main(int iArgCount, char* aArgV[])
 	unsigned int iAurora = 0;
 	unsigned int iAccess = 0;
 	unsigned int iMDL = 0;
-	LockType displayChoice_t = TRANSACTIONS;
 
 	if (signal(SIGINT, signalHandler) == SIG_ERR)
 	{
@@ -567,8 +567,8 @@ void displayTableLockWaits(MYSQL* pConn, int* pRow, unsigned int* pMDL)
 			mvprintw(iRow, 22, "%s", row_res[3]);
 			mvprintw(iRow, 46, "%s", row_res[4]);
 			mvprintw(iRow, 62, "%s", row_res[6]);
-			(row_res[7] != NULL) ? mvprintw(iRow, 70, "%s", row_res[7]) : mvprintw(iRow, 70, "-");
-			(row_res[8] != NULL) ? mvprintw(iRow, 79, "%s", row_res[8]) : mvprintw(iRow, 79, "-");
+			mvprintw(iRow, 70, "%s", (row_res[7] != NULL) ? row_res[7] : "-");
+			mvprintw(iRow, 79, "%s", (row_res[8] != NULL) ? row_res[8] : "-");
 			mvprintw(iRow, 89, "%s", row_res[9]);
 			mvprintw(iRow, 97, "%s", row_res[10]);
 			mvprintw(iRow, 119, "%s", row_res[11]);
@@ -661,8 +661,8 @@ void displayMetadata(MYSQL* pConn, int* pRow, unsigned int* pMDL, unsigned int* 
 				iRow++;
 				attrset(A_BOLD | COLOR_PAIR(1));
 
-				(row_res[1] != NULL) ? mvprintw(iRow, 1, "%s", row_res[1]) : mvprintw(iRow, 1, "-");
-				(row_res[2] != NULL) ? mvprintw(iRow, 25, "%s", row_res[2]) : mvprintw(iRow, 25, "-");
+				mvprintw(iRow, 1, "%s", (row_res[1] != NULL) ? row_res[1] : "-");
+				mvprintw(iRow, 25, "%s", (row_res[2] != NULL) ? row_res[2] : "-");
 				mvprintw(iRow, 53, "%s", row_res[0]);
 				mvprintw(iRow, 74, "%s", row_res[3]);
 				mvprintw(iRow, 97, "%s", row_res[4]);
@@ -716,14 +716,14 @@ void displayMetadata(MYSQL* pConn, int* pRow, unsigned int* pMDL, unsigned int* 
 				iRow++;
 				attrset(A_BOLD | COLOR_PAIR(1));
 
-				(row_res[1] != NULL) ? mvprintw(iRow, 1, "%s", row_res[1]) : mvprintw(iRow, 1, "-");
-				(row_res[2] != NULL) ? mvprintw(iRow, 25, "%s", row_res[2]) : mvprintw(iRow, 25, "-");
+				mvprintw(iRow, 1, "%s", (row_res[1] != NULL) ? row_res[1] : "-");
+				mvprintw(iRow, 25, "%s", (row_res[2] != NULL) ? row_res[2] : "-");
 				mvprintw(iRow, 53, "%s", row_res[0]);
 				mvprintw(iRow, 74, "%s", row_res[3]);
-				(row_res[4] != NULL) ? mvprintw(iRow, 97, "%s", row_res[4]) : mvprintw(iRow, 97, "-");
-				(row_res[5] != NULL) ? mvprintw(iRow, 117, "%s", row_res[5]) : mvprintw(iRow, 117, "-");
+				mvprintw(iRow, 97, "%s", (row_res[4] != NULL) ? row_res[4] : "-");
+				mvprintw(iRow, 117, "%s", (row_res[5] != NULL) ? row_res[5] : "-");
 				mvprintw(iRow, 127, "%s", row_res[6]);
-				(row_res[7] != NULL) ? mvprintw(iRow, 141, "%s", row_res[7]) : mvprintw(iRow, 141, "-");
+				mvprintw(iRow, 141, "%s", (row_res[7] != NULL) ? row_res[7] : "-");
 				mvprintw(iRow, 153, "%s", row_res[8]);
 
 				attrset(A_NORMAL);
@@ -757,7 +757,7 @@ unsigned int options(int iArgCount, char* const aArgV[])
 		{0, 0, 0, 0}
 	};
 
-	while ((iOpts = getopt_long(iArgCount, aArgV, "ih:w:u:f:t:p:", aLongOpts, &iOptsIdx)) != -1)
+	while ((iOpts = getopt_long(iArgCount, aArgV, "ih:u:t:p:", aLongOpts, &iOptsIdx)) != -1)
 	{
 		switch (iOpts)
 		{
@@ -785,7 +785,7 @@ unsigned int options(int iArgCount, char* const aArgV[])
 
 			case '?':
 
-				if (optopt == 'h' || optopt == 'w' || optopt == 'u' || optopt == 't' || optopt == 'p')
+				if (optopt == 'h' || optopt == 'u' || optopt == 't' || optopt == 'p')
 				{
 					fprintf(stderr, "\nMissing switch arguments.\n\n");
 				}
